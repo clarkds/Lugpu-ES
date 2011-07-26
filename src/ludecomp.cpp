@@ -1,51 +1,7 @@
-/******************************************************************************\
+/*******************notes***************/
+/*  need to implement texcoord,multitexcoord and find solution for Occlusion Queries
+    Also need to only allow 1 visible frame buffer at a time  */
 
-  Copyright 2005 The University of North Carolina at Chapel Hill.
-  All Rights Reserved.
-
-  Permission to use, copy, modify and distribute this software and its
-  documentation for educational, research and non-profit purposes, without
-  fee, and without a written agreement is hereby granted, provided that the
-  above copyright notice and the following three paragraphs appear in all
-  copies. Any use in a commercial organization requires a separate license.
-
-  IN NO EVENT SHALL THE UNIVERSITY OF NORTH CAROLINA AT CHAPEL HILL BE LIABLE
-  TO ANY PARTY FOR DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL
-  DAMAGES, INCLUDING LOST PROFITS, ARISING OUT OF THE USE OF THIS SOFTWARE AND
-  ITS DOCUMENTATION, EVEN IF THE UNIVERSITY OF NORTH CAROLINA HAVE BEEN
-  ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
-
-
-  Permission to use, copy, modify and distribute this software and its
-  documentation for educational, research and non-profit purposes, without
-  fee, and without a written agreement is hereby granted, provided that the
-  above copyright notice and the following three paragraphs appear in all
-  copies.
-
-  THE UNIVERSITY OF NORTH CAROLINA SPECIFICALLY DISCLAIM ANY WARRANTIES,
-  INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-  FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS ON AN
-  "AS IS" BASIS, AND THE UNIVERSITY OF NORTH CAROLINA HAS NO OBLIGATION TO
-  PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
-
-
-   ---------------------------------
-  |Please send all BUG REPORTS to:  |
-  |                                 |
-  |   geom@cs.unc.edu               |
-  |                                 |
-   ---------------------------------
-
-
-  The authors may be contacted via:
-
-  US Mail:         N. Govindaraju, N. Raghuvanshi or D. Manocha
-                       Department of Computer Science
-                       Sitterson Hall, CB #3175
-                       University of North Carolina
-                       Chapel Hill, NC 27599-3175
-
-\*****************************************************************************/
 #define for if(1) for
 
 #include <iostream>
@@ -69,7 +25,7 @@ using namespace std;
 LUDecomp * lu;
 
 
-void lugpu_initilize(int argc, char ** argv)
+void lugpu_initilize(int argc, char ** argv)   // not changing this, assuming glutES is identical
 {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE);
@@ -86,7 +42,7 @@ void lugpu_initilize(int argc, char ** argv)
 }
 
 
-void lugpu_sgetc2(const int *m,float *matrix,const int *lda,int *cpivot,int*rpivot,int *info)
+void lugpu_sgetc2(const int *m,float *matrix,const int *lda,int *cpivot,int*rpivot,int *info) //leaving along for now,  not sure what it does
 {
 
 	*info = 0;
@@ -118,7 +74,7 @@ void lugpu_sgetc2(const int *m,float *matrix,const int *lda,int *cpivot,int*rpiv
 }
 
 
-void lugpu_sgetrf(const int *m,const int *n,float *matrix,const int *lda,int *pivot,int *info)
+void lugpu_sgetrf(const int *m,const int *n,float *matrix,const int *lda,int *pivot,int *info) //leaving alone for now, not sure what does
 {
 
 	*info = 0;
@@ -171,54 +127,54 @@ LUDecomp::LUDecomp()
 }
 
 
+/**************BEGINNING CONVERSION TO OPENGLES********************/
 
-
-void LUDecomp::SetSize(int m,int n)
+void LUDecomp::SetSize(int m,int n)  //converted
 {
 
 	_m = m;
 	_n = n;
 
-	glActiveTextureARB( GL_TEXTURE0_ARB );
-	glBindTexture(GL_TEXTURE_RECTANGLE_NV, textureid[0]);
-	glTexImage2D(GL_TEXTURE_RECTANGLE_NV, 0, GL_FLOAT_R32_NV, _m, _n, 0, GL_RED, GL_FLOAT, NULL);
+	glActiveTexture( GL_TEXTURE0 );   
+	glBindTexture(GL_TEXTURE_2D, textureid[0]);   //changed GL_TEXTURE_RECTANGE to 2D
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, _m, _n, 0, GL_LUMINANCE, FLOAT, NULL); 
 
-	glActiveTextureARB( GL_TEXTURE0_ARB );
-	glBindTexture(GL_TEXTURE_RECTANGLE_NV, textureid[1]);
-	glTexImage2D(GL_TEXTURE_RECTANGLE_NV, 0, GL_FLOAT_R32_NV, _m, _n, 0, GL_RED, GL_FLOAT, NULL);
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture(GL_TEXTURE_2D, textureid[1]);  
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, _m, _n, 0, GL_LUMINANCE, FLOAT, NULL);
 
-	glActiveTextureARB( GL_TEXTURE0_ARB );
-	glBindTexture(GL_TEXTURE_RECTANGLE_NV, textureid[2]);
-	glTexImage2D(GL_TEXTURE_RECTANGLE_NV, 0, GL_FLOAT_R32_NV, _m, _n, 0, GL_RED, GL_FLOAT, NULL);
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture(GL_TEXTURE_2D, textureid[2]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, _m, _n, 0, GL_LUMINANCE, FLOAT, NULL);
 
 
-	glActiveTextureARB( GL_TEXTURE0_ARB );
-	glBindTexture(GL_TEXTURE_RECTANGLE_NV, textureid[3]);
-	glTexImage2D(GL_TEXTURE_RECTANGLE_NV, 0, GL_FLOAT_R32_NV, _m, _n, 0, GL_RED, GL_FLOAT, NULL);
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture(GL_TEXTURE_2D, textureid[3]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, _m, _n, 0, GL_LUMINANCE, FLOAT, NULL);
 
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fb);
+	glBindFramebuffer(GL_FRAMEBUFFER, fb);
 
-	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,
-                                  GL_COLOR_ATTACHMENT0_EXT,
-                                  GL_TEXTURE_RECTANGLE_NV, textureid[0], 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER,
+                                  GL_COLOR_ATTACHMENT0,
+                                  GL_TEXTURE_2D, textureid[0], 0);
 
-	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,
-                                  GL_COLOR_ATTACHMENT1_EXT,
-                                  GL_TEXTURE_RECTANGLE_NV, textureid[1], 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER,
+                                  GL_COLOR_ATTACHMENT1,
+                                  GL_TEXTURE_2D, textureid[1], 0);
 
-	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,
-                                  GL_COLOR_ATTACHMENT2_EXT,
-                                  GL_TEXTURE_RECTANGLE_NV, textureid[2], 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER,
+                                  GL_COLOR_ATTACHMENT2,
+                                  GL_TEXTURE_2D, textureid[2], 0);
 
-	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,
-                                  GL_COLOR_ATTACHMENT3_EXT,
-                                  GL_TEXTURE_RECTANGLE_NV, textureid[3], 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER,
+                                  GL_COLOR_ATTACHMENT3,
+                                  GL_TEXTURE_2D, textureid[3], 0);
 	
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluOrtho2D(0, _m, 0, _n);
+	glOrthof(0, _m, 0, _n, -1, 1);
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
 	glClearColor(0, 0, 0, 0);
@@ -260,7 +216,7 @@ LUDecomp::~LUDecomp()
  * 
  * Here we initialize and allocate necessary GPU resources.
  */ 
-void LUDecomp::Initialize(int m, int n, int ncomp, int xblocksize, int yblocksize)
+void LUDecomp::Initialize(int m, int n, int ncomp, int xblocksize, int yblocksize) //converted
 {
 	lu->_InitializeSlabOps();
 	
@@ -274,7 +230,7 @@ void LUDecomp::Initialize(int m, int n, int ncomp, int xblocksize, int yblocksiz
 
 	_bInitialized = true;
 
-	glGenFramebuffersEXT(1, &fb);	
+	glGenFramebuffers(1, &fb);	
 
 	glGenTextures(1, &textureid[0]);
 	glGenTextures(1, &textureid[1]);
@@ -283,7 +239,7 @@ void LUDecomp::Initialize(int m, int n, int ncomp, int xblocksize, int yblocksiz
 
 	SetSize(_m,_n);
 
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 //----------------------------------------------------------------------------
@@ -333,17 +289,26 @@ void LUDecomp::Shutdown()
  * 
  * 
  */ 
-void LUDecomp::CopyRect(float xmin,float ymin,float xmax,float ymax)
+void LUDecomp::CopyRect(float xmin,float ymin,float xmax,float ymax)  //converted
 {
-	copy_fp.Bind();
+	GLuint vbuff;
+	
+        glGenBuffers( 8 , &vbuff);
+	
+	GLfloat v[8];
+	v[0] = xmin;  v[1] = ymin;
+	v[2] = xmin;  v[3] = ymax;
+	v[4] = xmax;  v[5] = ymax;
+	v[6] = xmax;  v[7] = ymin;
 
-	glBegin(GL_QUADS);
+	GLubyte i[] = {0,1,2,   //first triangle (BL, TL ,TR)
+		       0,2,3};  //second traingle(BL, TR, BR)
 
-	glVertex2f(xmin,ymin);
-	glVertex2f(xmax,ymin);
-	glVertex2f(xmax,ymax);
-	glVertex2f(xmin,ymax);
-	glEnd();
+	glBindBuffer(GL_ARRAY_BUFFER,vbuff);
+	glBufferData(GL_ARRAY_BUFFER,8*sizeof(GLfloat), v , GL_STATIC_DRAW);
+      	glDrawElements(GL_TRAINGLES, 6 , GL_UNSIGNED_BYTE, i);
+
+	glDeleteBuffers( 8 ,&vbuff);
 }
 
 //----------------------------------------------------------------------------
@@ -356,11 +321,17 @@ void LUDecomp::CopyRect(float xmin,float ymin,float xmax,float ymax)
  * 
  * 
  */ 
-void LUDecomp::Divide(int k,float xmin,float ymin,float xmax,float ymax)
-{
-	divide_fp.Bind();
+void LUDecomp::Divide(int k,float xmin,float ymin,float xmax,float ymax) //converting *texcoord
+{ 	
+        divide_fp.Bind();
+	
+	// need to implement glTexCoord2f here
 
-	glBegin(GL_QUADS);
+	CopyRect(xmin,ymin,xmax,ymax);
+	
+	divide_fp.Release();
+
+  /*	glBegin(GL_QUADS);
 	glTexCoord2f((float)k+.5,(float)k+.5);
 
 	glVertex2f(ymin,xmin);
@@ -369,28 +340,46 @@ void LUDecomp::Divide(int k,float xmin,float ymin,float xmax,float ymax)
 	glVertex2f(ymin,xmax);
 	glEnd();
 
-	divide_fp.Release();
+	divide_fp.Release();      */
+
 }
 
-void LUDecomp::SwapRows(float a,float b)
+void LUDecomp::SwapRows(float a,float b) //converted
 {
 	swaprow_fp.Bind();
 	swaprow_fp.SetConstant(0,b,b,b,b);
-	glBegin(GL_LINES);
-	glVertex2f(0,a);
-	glVertex2f(_m,a);
-	glEnd();
+
+	GLuint vbuff;
+
+	glGenBuffers( 4 , &vbuff);
+
+	GLfloat v[4];
+	v[0] =  0; v[1] = a;
+	v[2] = _m; v[3] = a;
+	
+	glBindBuffer(GL_ARRAY_BUFFER, vbuff);
+	glBufferData(GL_ARRAY_BUFFER, 4*sizeof(GLfloat), v , GL_STATIC_DRAW);
+	glDrawArrays(GL_LINES, 0, 4);
 
 }
 
-void LUDecomp::SwapCols(float a,float b)
+void LUDecomp::SwapCols(float a,float b) //converted
 {
 	swapcol_fp.Bind();
 	swapcol_fp.SetConstant(0,b,b,b,b);
-	glBegin(GL_LINES);
-	glVertex2f(a,0);
-	glVertex2f(a,_n);
-	glEnd();
+
+	GLuint vbuff;
+
+	glBenBuffers( 4, &vbuff);
+
+	GLfloat v[4];
+	v[0] = a; v[1] =  0;
+	v[2] = a; v[3] = _n;
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbuff);
+	glBufferData(GL_ARRAY_BUFFER, 4*sizeof(GLfloat), v , GL_STATIC_DRAW);
+	glDrawArrays(GL_LINES, 0, 4);
+
 }
 
 
@@ -421,13 +410,14 @@ void LUDecomp::PingPong01()
  * 
  * 
  */ 
-void LUDecomp::Refresh01()
+void LUDecomp::Refresh01()  //converted
 {
-	glDrawBuffer((!current01) ? GL_COLOR_ATTACHMENT0_EXT : GL_COLOR_ATTACHMENT1_EXT);
-	glReadBuffer((!current01) ? GL_COLOR_ATTACHMENT0_EXT : GL_COLOR_ATTACHMENT1_EXT);
-
 	boundtexture = textureid[!current01];
-	glBindTexture(GL_TEXTURE_RECTANGLE_NV,boundtexture);
+	glBindTexture(GL_TEXTURE_2D,boundtexture);
+
+	//believe these are not needed.  multiple drawing buffers has been deprecated
+	//glDrawBuffer((!current01) ? GL_COLOR_ATTACHMENT0_EXT : GL_COLOR_ATTACHMENT1_EXT);
+        //glReadBuffer((!current01) ? GL_COLOR_ATTACHMENT0_EXT : GL_COLOR_ATTACHMENT1_EXT);
 }
 
 //----------------------------------------------------------------------------
@@ -457,13 +447,14 @@ void LUDecomp::PingPong23()
  * 
  */ 
 
-void LUDecomp::Refresh23()
+void LUDecomp::Refresh23()  //converted
 {
-	glDrawBuffer((!current23) ? GL_COLOR_ATTACHMENT2_EXT : GL_COLOR_ATTACHMENT3_EXT);
-	glReadBuffer((!current23) ? GL_COLOR_ATTACHMENT2_EXT : GL_COLOR_ATTACHMENT3_EXT);
-
 	boundtexture = textureid[!current23+2];
-	glBindTexture(GL_TEXTURE_RECTANGLE_NV,boundtexture);
+	glBindTexture(GL_TEXTURE_2D,boundtexture);
+	
+	//no longer needed.  Multiple drawing buffers deprecated
+	//glDrawBuffer((!current23) ? GL_COLOR_ATTACHMENT2_EXT : GL_COLOR_ATTACHMENT3_EXT);
+	//glReadBuffer((!current23) ? GL_COLOR_ATTACHMENT2_EXT : GL_COLOR_ATTACHMENT3_EXT);
 }
 
 
@@ -477,7 +468,7 @@ void LUDecomp::Refresh23()
  * 
  */ 
 
-void LUDecomp::Compute(int pivot)
+void LUDecomp::Compute(int pivot)  //converting   *multitexcoord
 {
 	
 	assert( _bInitialized );
@@ -498,7 +489,7 @@ void LUDecomp::Compute(int pivot)
 
 	int maxrow,maxcol;
 
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fb);
+	glBindFramebuffer(GL_FRAMEBUFFER, fb);
 
 	PingPong01();
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -613,24 +604,37 @@ void LUDecomp::Compute(int pivot)
 
 		row_fp.Bind();
 
-		glBegin(GL_QUADS);
-		glMultiTexCoord2f(GL_TEXTURE0_ARB,k+.5,k+1);
-		glMultiTexCoord2f(GL_TEXTURE1_ARB,k+1,k+.5);
-		glVertex2f(k+1,k+1);
 
+		GLuint vbuff;
+
+		glGenBuffers( 8 , &vbuff);
+
+		float v[];
+		v[0] = k+1;  v[1] = k+1;
+		v[2] =  _m;  v[3] = k+1;
+		v[4] =  _m;  v[5] =  _n;
+		v[6] = k+1;  v[7] =  _n;
+
+		GLubyte i[] = {0,1,2,   //first triangle (BL, TL ,TR)
+		               0,2,3};  //second traingle(BL, TR, BR)
+
+
+	/*      need to implement this function call
+	        glMultiTexCoord2f(GL_TEXTURE0_ARB,k+.5,k+1);
+		glMultiTexCoord2f(GL_TEXTURE1_ARB,k+1,k+.5);
 		glMultiTexCoord2f(GL_TEXTURE0_ARB,k+.5,k+1);
 		glMultiTexCoord2f(GL_TEXTURE1_ARB,_m,k+.5);
-		glVertex2f(_m,k+1);
-
 		glMultiTexCoord2f(GL_TEXTURE0_ARB,k+.5,_n);
 		glMultiTexCoord2f(GL_TEXTURE1_ARB,_m,k+.5);
-		glVertex2f(_m,_n);
-
 		glMultiTexCoord2f(GL_TEXTURE0_ARB,k+.5,_n);
-		glMultiTexCoord2f(GL_TEXTURE1_ARB,k+1,k+.5);
-		glVertex2f(k+1,_n);
+		glMultiTexCoord2f(GL_TEXTURE1_ARB,k+1,k+.5);   */
 
-		glEnd();
+		glBindBuffer(GL_ARRAY_BUFFER,vbuff);
+		glBufferData(GL_ARRAY_BUFFER,8*sizeof(GLfloat), v , GL_STATIC_DRAW);
+		glDrawElements(GL_TRAINGLES, 6 , GL_UNSIGNED_BYTE, i);
+
+		glDeleteBuffers( 8 ,&vbuff);
+
 
 		// Increase row coordinates
 		rYmin = (k+1) * deltaY;
@@ -643,7 +647,7 @@ void LUDecomp::Compute(int pivot)
 
 
 	}
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	_bComputed = true;
 }
@@ -658,30 +662,30 @@ void LUDecomp::Compute(int pivot)
  * @fn LUDecomp::LoadMatrix(const std::vector<std::vector<float> >& m)
  * @brief Sets the non zero elements of the sparse matrix
  */ 
-void LUDecomp::LoadMatrix(float *data)
+void LUDecomp::LoadMatrix(float *data)  //converted
 {
  
-	GLint format = (_ncomponents == 1) ? GL_RED : GL_RGBA;
+	GLint format = (_ncomponents == 1) ? GL_LUMINANCE : GL_RGBA;
 	_currentDrawSurface = 0;
 
 	current01 = 1;
 
 
-	glActiveTextureARB(GL_TEXTURE0_ARB);
-	glBindTexture(GL_TEXTURE_RECTANGLE_NV,textureid[0]);   
-	glTexSubImage2D(GL_TEXTURE_RECTANGLE_NV, 0, 0, 0, _m, _n, format, GL_FLOAT,data);	
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D,textureid[0]);   
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, _m, _n, format, FLOAT,data);	
 	
 	//Go into FBO mode, bind the uploaded data as the source texture
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fb);
-	glDrawBuffer( GL_COLOR_ATTACHMENT0_EXT);  
+	glBindFramebuffer(GL_FRAMEBUFFER, fb);
+	//glDrawBuffer( GL_COLOR_ATTACHMENT0_EXT);  assumed not needed
 	glColorMask(~0,~0,~0,~0);
-	glEnable(GL_TEXTURE_RECTANGLE_NV);	
-	glActiveTextureARB( GL_TEXTURE0_ARB );
+	//glEnable(GL_TEXTURE_RECTANGLE_NV);   assumed not needed	
+	glActiveTexture( GL_TEXTURE0 );
 
 
 	PingPong01();
 	
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
 	++_currentDrawSurface;
@@ -696,9 +700,9 @@ void LUDecomp::LoadMatrix(float *data)
  * @fn LUDecomp::GetMatrix(std::vector<std::vector<float> >& m) const;
  * @brief Gets the matrix data;
  */ 
-void LUDecomp::GetMatrix(std::vector<std::vector<float> >& m) const
+void LUDecomp::GetMatrix(std::vector<std::vector<float> >& m) const  //converted
 { 
-  GLint format = (_ncomponents == 1) ? GL_RED : GL_RGBA;
+  GLint format = (_ncomponents == 1) ? GL_LUMINANCE : GL_RGBA;
   //assert(_bComputed);
 
   for (int i = (int)m.size() - 1; i >= 0; --i)
@@ -710,17 +714,18 @@ void LUDecomp::GetMatrix(std::vector<std::vector<float> >& m) const
   int xoffset = 0;
   int yoffset = 0;
 
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,fb);
-	glReadBuffer((_currentDrawSurface%2) ? GL_COLOR_ATTACHMENT0_EXT  : GL_COLOR_ATTACHMENT1_EXT );
+	glBindFramebuffer(GL_FRAMEBUFFER,fb);
+	//glReadBuffer((_currentDrawSurface%2) ? GL_COLOR_ATTACHMENT0_EXT  : GL_COLOR_ATTACHMENT1_EXT );   asssumed not needed
+
 	for (int i = 0; i < _n; ++i)
 	{
-		glReadPixels(xoffset, yoffset, _m, 1, format, GL_FLOAT, &data[0]);
+		glReadPixels(xoffset, yoffset, _m, 1, format, FLOAT, &data[0]);
 
 
 		m.push_back(data);
 		++yoffset;
 	}
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,0);
+	glBindFramebuffer(GL_FRAMEBUFFER,0);
 	
 
 }
@@ -734,7 +739,7 @@ void LUDecomp::GetMatrix(std::vector<std::vector<float> >& m) const
  * @fn LUDecomp::ComputeMax
  * @brief Computes the max value using a mipmap type algorithm
  */ 
-void LUDecomp::ComputeMax(int k,float*maxi,float*maxj) 
+void LUDecomp::ComputeMax(int k,float*maxi,float*maxj)    //converting *occlusion queries & texcoord
 {
 	
 	static GLuint qid[4];
@@ -747,10 +752,10 @@ void LUDecomp::ComputeMax(int k,float*maxi,float*maxj)
 	int i;
 
 
-	glActiveTextureARB(GL_TEXTURE0_ARB);
+	glActiveTexture(GL_TEXTURE0);
 
 	PingPong23();
-	glBindTexture(GL_TEXTURE_RECTANGLE_NV, textureid[!current01]);
+	glBindTexture(GL_TEXTURE_2D, textureid[!current01]);
 
 	CopyRect(0,0,_m,_m);
 
@@ -760,7 +765,7 @@ void LUDecomp::ComputeMax(int k,float*maxi,float*maxj)
 	max_fp.Bind();
 
 	if(once)
-		glGenOcclusionQueriesNV(4, qid);
+	  glGenOcclusionQueriesNV(4, qid);  //need to understand
 
 	int bits = _m-k;
 
@@ -783,25 +788,32 @@ void LUDecomp::ComputeMax(int k,float*maxi,float*maxj)
 		{
 
 			PingPong23();
-			
 
-			glBegin(GL_QUADS);
-			{
-				int a= nextbits;
-				glTexCoord2f(i+a+k,k);
-				glVertex2f(a+k,k);
+			int a= nextbits;
+			GLuint vbuff;
 
-				glTexCoord2f(i+i+a+k,k);
-				glVertex2f(i+a+k,k);
+			glGenBuffers( 8 , &vbuff);
 
-				glTexCoord2f(i+i+a+k,_m+k);
-				glVertex2f(i+a+k,_m+k);
+			float v1[];
+			v1[0] = a+k;   v1[1] = k;
+			v1[2] = i+a+k; v1[3] = k;
+			v1[4] = i+a+k; v1[5] = _m+k;
+			v1[6] = a+k;   v1[7] = _m+k;
 
-				glTexCoord2f(i+a+k,_m+k);
-				glVertex2f(a+k,_m+k);
-			}
-			glEnd();
-			
+		        GLubyte i1[] = {0,1,2,   //first triangle (BL, TL ,TR)
+		                       0,2,3};  //second traingle(BL, TR, BR)
+
+	       	/*	glTexCoord2f(i+a+k,k);   need to implement
+			glTexCoord2f(i+i+a+k,k);
+			glTexCoord2f(i+i+a+k,_m+k);
+			glTexCoord2f(i+a+k,_m+k);  */
+
+			glBindBuffer(GL_ARRAY_BUFFER,vbuff);
+			glBufferData(GL_ARRAY_BUFFER,8*sizeof(GLfloat), v1 , GL_STATIC_DRAW);
+			glDrawElements(GL_TRAINGLES, 6 , GL_UNSIGNED_BYTE, i1);
+
+			glDeleteBuffers( 8 ,&vbuff);
+						
 		}
 		
 		bits = nextbits;
@@ -825,20 +837,30 @@ void LUDecomp::ComputeMax(int k,float*maxi,float*maxj)
 		
 			PingPong23();
 
-			glBegin(GL_QUADS);
-			{
-				
-				int a= nextbits;
-				glTexCoord2f(k,i+a+k);
-				glVertex2f(k,a+k);
-				glTexCoord2f(k,i+a+k);
-				glVertex2f(1+k,a+k);
-				glTexCoord2f(k,i+i+a+k);
-				glVertex2f(1+k,i+a+k);
-				glTexCoord2f(k,i+i+a+k);
-				glVertex2f(k,i+a+k);
-			}
-			glEnd();
+			int a= nextbits;
+		
+			glGenBuffers( 8 , &vbuff);
+
+			float v2[];
+			v2[0] = k;   v2[1] = a+k;
+			v2[2] = 1+k; v2[3] = a+k;
+			v2[4] = 1+k; v2[5] = i+a+k;
+			v2[6] = k;   v2[7] = i+a+k;
+
+		        GLubyte i2[] = {0,1,2,   //first triangle (BL, TL ,TR)
+		                       0,2,3};  //second traingle(BL, TR, BR)
+
+	       	/*      glTexCoord2f(k,i+a+k);   need to implement
+			glTexCoord2f(k,i+a+k);
+			glTexCoord2f(k,i+i+a+k); 
+			glTexCoord2f(k,i+i+a+k);*/
+
+			glBindBuffer(GL_ARRAY_BUFFER,vbuff);
+			glBufferData(GL_ARRAY_BUFFER,8*sizeof(GLfloat), v2 , GL_STATIC_DRAW);
+			glDrawElements(GL_TRAINGLES, 6 , GL_UNSIGNED_BYTE, i2);
+
+			glDeleteBuffers( 8 ,&vbuff);
+			
 		}
 		
 		bits = nextbits;
@@ -851,97 +873,142 @@ void LUDecomp::ComputeMax(int k,float*maxi,float*maxj)
 	quadtree_fp.SetConstant(0,k,k,k,k);
 
 
-	glActiveTextureARB(GL_TEXTURE0_ARB);
-	glBindTexture(GL_TEXTURE_RECTANGLE_NV, textureid[!current23+2]);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textureid[!current23+2]);
 
-	glActiveTextureARB(GL_TEXTURE1_ARB);
-	glBindTexture(GL_TEXTURE_RECTANGLE_NV, textureid[!current01]);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, textureid[!current01]);
 
-	glActiveTextureARB(GL_TEXTURE0_ARB);
+	glActiveTexture(GL_TEXTURE0);
 
 
 
 	
 	PingPong23();
-	glActiveTextureARB(GL_TEXTURE0_ARB);
+	glActiveTexture(GL_TEXTURE0);
 
 	int xstart = k,ystart=k;
 
 	bits = _m-k;
 
+
+
 	for(int i=(bits+1) >> 1;i > 0;i = (i+1) >> 1)
 	{
 		glBeginOcclusionQueryNV(qid[0]);
-		glBegin(GL_QUADS);
+		//quad1
+		glGenBuffers( 8 , &vbuff);
 
-			//quad1
+			float v3[];
+			v3[0] = xstart;   v3[1] = ystart;
+			v3[2] = xstart+i; v3[3] = ystart;
+			v3[4] = xstart+i; v3[5] = ystart+i;
+			v3[6] = xstart;   v3[7] = ystart+i;
+
+		        GLubyte i3[] = {0,1,2,   //first triangle (BL, TL ,TR)
+		                       0,2,3};  //second traingle(BL, TR, BR)
+
+	       	/*      glTexCoord2f(0,i);   need to implement
 			glTexCoord2f(0,i);
-			glVertex2f(xstart,ystart);
+			glTexCoord2f(0,i+i); 
+			glTexCoord2f(0,i+i);*/
 
-			glTexCoord2f(0,i);
-			glVertex2f(xstart+i,ystart);
+			glBindBuffer(GL_ARRAY_BUFFER,vbuff);
+			glBufferData(GL_ARRAY_BUFFER,8*sizeof(GLfloat), v3 , GL_STATIC_DRAW);
+			glDrawElements(GL_TRAINGLES, 6 , GL_UNSIGNED_BYTE, i3);
 
-			glTexCoord2f(0,i+i);
-			glVertex2f(xstart+i,ystart+i);
-
-			glTexCoord2f(0,i+i);
-			glVertex2f(xstart,ystart+i);
-
-		glEnd();
+			glDeleteBuffers( 8 ,&vbuff);
+		
 		glEndOcclusionQueryNV();
+
+
 
 
 		glBeginOcclusionQueryNV(qid[1]);
-		glBegin(GL_QUADS);
-			//quad2
+		//quad2
+		glGenBuffers( 8 , &vbuff);
+ 
+		float v4[];
+		v4[0] = xstart+i;   v4[1] = ystart;
+		v4[2] = xstart+i+i; v4[3] = ystart;
+		v4[4] = xstart+i+i; v4[5] = ystart+i;
+		v4[6] = xstart+i;   v4[7] = ystart+i;
+		
+		GLubyte i4[] = {0,1,2,   //first triangle (BL, TL ,TR)
+				0,2,3};  //second traingle(BL, TR, BR)
+
+	       	/*      glTexCoord2f(0,i);   need to implement
 			glTexCoord2f(0,i);
-			glVertex2f(xstart+i,ystart);
+			glTexCoord2f(0,i+i); 
+			glTexCoord2f(0,i+i);*/
 
-			glTexCoord2f(0,i);
-			glVertex2f(xstart+i*2,ystart);
+		glBindBuffer(GL_ARRAY_BUFFER,vbuff);
+		glBufferData(GL_ARRAY_BUFFER,8*sizeof(GLfloat), v4 , GL_STATIC_DRAW);
+		glDrawElements(GL_TRAINGLES, 6 , GL_UNSIGNED_BYTE, i4);
 
-			glTexCoord2f(0,i+i);
-			glVertex2f(xstart+i*2,ystart+i);
-
-			glTexCoord2f(0,i+i);
-			glVertex2f(xstart+i,ystart+i);
-		glEnd();
+		glDeleteBuffers( 8 ,&vbuff);
+		
 		glEndOcclusionQueryNV();
+
+
 
 
 		glBeginOcclusionQueryNV(qid[2]);
-		glBegin(GL_QUADS);
-			//quad3
+		//quad3
+		glGenBuffers( 8 , &vbuff);
+ 
+		float v5[];
+		v5[0] = xstart;   v5[1] = ystart+i;
+		v5[2] = xstart+i; v5[3] = ystart+i;
+		v5[4] = xstart+i; v5[5] = ystart+i+i;
+		v5[6] = xstart;   v5[7] = ystart+i+i;
+		
+		GLubyte i5[] = {0,1,2,   //first triangle (BL, TL ,TR)
+				0,2,3};  //second traingle(BL, TR, BR)
+
+	       	/*      glTexCoord2f(0,i);   need to implement
 			glTexCoord2f(0,i);
-			glVertex2f(xstart,ystart+i);
+			glTexCoord2f(0,i+i); 
+			glTexCoord2f(0,i+i);*/
 
-			glTexCoord2f(0,i);
-			glVertex2f(xstart+i,ystart+i);
+		glBindBuffer(GL_ARRAY_BUFFER,vbuff);
+		glBufferData(GL_ARRAY_BUFFER,8*sizeof(GLfloat), v5 , GL_STATIC_DRAW);
+		glDrawElements(GL_TRAINGLES, 6 , GL_UNSIGNED_BYTE, i5);
 
-			glTexCoord2f(0,i+i);
-			glVertex2f(xstart+i,ystart+i+i);
-
-			glTexCoord2f(0,i+i);
-			glVertex2f(xstart,ystart+i+i);
-		glEnd();
+		glDeleteBuffers( 8 ,&vbuff);
+		
 		glEndOcclusionQueryNV();
+
+
+
 
 		glBeginOcclusionQueryNV(qid[3]);
-		glBegin(GL_QUADS);
-			//quad4
+		//quad4
+		glGenBuffers( 8 , &vbuff);
+ 
+		float v6[];
+		v6[0] = xstart+i;   v6[1] = ystart+i;
+		v6[2] = xstart+i+i; v6[3] = ystart+i;
+		v6[4] = xstart+i+i; v6[5] = ystart+i+i;
+		v6[6] = xstart+i;   v6[7] = ystart+i+i;
+		
+		GLubyte i6[] = {0,1,2,   //first triangle (BL, TL ,TR)
+				0,2,3};  //second traingle(BL, TR, BR)
+
+	       	/*      glTexCoord2f(0,i);   need to implement
 			glTexCoord2f(0,i);
-			glVertex2f(xstart+i,ystart+i);
+			glTexCoord2f(0,i+i); 
+			glTexCoord2f(0,i+i);*/
 
-			glTexCoord2f(0,i);
-			glVertex2f(xstart+i+i,ystart+i);
+		glBindBuffer(GL_ARRAY_BUFFER,vbuff);
+		glBufferData(GL_ARRAY_BUFFER,8*sizeof(GLfloat), v6 , GL_STATIC_DRAW);
+		glDrawElements(GL_TRAINGLES, 6 , GL_UNSIGNED_BYTE, i6);
 
-			glTexCoord2f(0,i+i);
-			glVertex2f(xstart+i+i,ystart+i+i);
-
-			glTexCoord2f(0,i+i);
-			glVertex2f(xstart+i,ystart+i+i);
-		glEnd();
+		glDeleteBuffers( 8 ,&vbuff);
+		
 		glEndOcclusionQueryNV();
+
+
 
 		for(int j=0;j < 4;j++)
 		{
@@ -976,7 +1043,7 @@ void LUDecomp::ComputeMax(int k,float*maxi,float*maxj)
  * @fn LUDecomp::ComputeMax
  * @brief Computes the max value using a mipmap type algorithm
  */ 
-void LUDecomp::ComputeMax(int k,float*maxi) 
+void LUDecomp::ComputeMax(int k,float*maxi) //converting  *Occlusion Querries & texcoord
 {
 	static GLuint qid[4];
 
@@ -991,15 +1058,15 @@ void LUDecomp::ComputeMax(int k,float*maxi)
 	int i;
 	
 
-	glActiveTextureARB(GL_TEXTURE0_ARB);
-	glBindTexture(GL_TEXTURE_RECTANGLE_NV, textureid[!current01]);
+	glActiveTexture(GL_TEXTURE0B);
+	glBindTexture(GL_TEXTURE_2D, textureid[!current01]);
 	
 
 	CopyRect(k,k,_m,k+1);
 
 	PingPong23();
 
-	glBindTexture(GL_TEXTURE_RECTANGLE_NV, textureid[!current01]);
+	glBindTexture(GL_TEXTURE_2D, textureid[!current01]);
 
 	CopyRect(k,k,_m,k+1);
 
@@ -1027,31 +1094,40 @@ void LUDecomp::ComputeMax(int k,float*maxi)
 		
 		_currentDrawSurface++;
 
-		glBegin(GL_QUADS);
-		{
-			glTexCoord2f(k+i,k);
-			glVertex2f(k,k);
+		GLuint vbuff;
+		
+		glGenBuffers( 8 , &vbuff);
 
-			glTexCoord2f(k+i,k);
-			glVertex2f(k,k+1);
-			
-			glTexCoord2f(k+i*2,k);
-			glVertex2f(k+i,k+1);
-			
-			glTexCoord2f(k+i*2,k);
-			glVertex2f(k+i,k);
-		}
-		glEnd();
+		float v1[];
+		v1[0] = k;   v1[1] = k;
+		v1[2] = k;   v1[2] = k+1;
+		v1[4] = k+i; v1[5] = k+1;
+		v1[6] = k+i; v1[7] = k;
+
+		GLubyte i1[] = {0,1,2,   //first triangle (BL, TL ,TR)
+		               0,2,3};  //second traingle(BL, TR, BR)
+
+		/*  glTexCoord2f(k+i,k);   need to implement
+		    glTexCoord2f(k+i,k);
+		    glTexCoord2f(k+i*2,k);
+		    glTexCoord2f(k+i*2,k);     */ 
+
+		glBindBuffer(GL_ARRAY_BUFFER,vbuff);
+		glBufferData(GL_ARRAY_BUFFER,8*sizeof(GLfloat), v1 , GL_STATIC_DRAW);
+		glDrawElements(GL_TRAINGLES, 6 , GL_UNSIGNED_BYTE, i1);
+
+		glDeleteBuffers( 8 ,&vbuff);
+				
 	}
 
 	
-	glActiveTextureARB(GL_TEXTURE0_ARB);
-	glBindTexture(GL_TEXTURE_RECTANGLE_NV, textureid[!current23+2]);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textureid[!current23+2]);
 
-	glActiveTextureARB(GL_TEXTURE1_ARB);
-	glBindTexture(GL_TEXTURE_RECTANGLE_NV, textureid[!current01]);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, textureid[!current01]);
 
-	glActiveTextureARB(GL_TEXTURE0_ARB);
+	glActiveTexture(GL_TEXTURE0);
 
 	quadtree_fp.Bind();
 	quadtree_fp.SetConstant(0,k,k,k,k);
@@ -1065,41 +1141,60 @@ void LUDecomp::ComputeMax(int k,float*maxi)
 	for(int i=(bits+1) >> 1;i > 0;i = (i+1) >> 1)
 	{
 		glBeginOcclusionQueryNV(qid[0]);
-		glBegin(GL_QUADS);
+		//quad1
+		glGenBuffers( 8 , &vbuff);
 
-			//quad1
+		float v2[];
+		v2[0] = xstart;   v2[1] = ystart;
+		v2[2] = xstart;   v2[3] = ystart+1;
+		v2[4] = xstart+i; v2[5] = ystart+1;
+		v2[6] = xstart+i; v2[7] = ystart;
 
-			glTexCoord2f(i,0);
-			glVertex2f(xstart,ystart);
+		GLubyte i2[] = {0,1,2,   //first triangle (BL, TL ,TR)
+		               0,2,3};  //second traingle(BL, TR, BR)
 
-			glTexCoord2f(i,0);
-			glVertex2f(xstart,ystart+1);
+		/*glTexCoord2f(i,0);  need to implement
+		glTexCoord2f(i,0);
+		glTexCoord2f(i+i,0);
+		glTexCoord2f(i+i,0); */
 
-			glTexCoord2f(i+i,0);
-			glVertex2f(xstart+i,ystart+1);
+		glBindBuffer(GL_ARRAY_BUFFER,vbuff);
+		glBufferData(GL_ARRAY_BUFFER,8*sizeof(GLfloat), v2 , GL_STATIC_DRAW);
+		glDrawElements(GL_TRAINGLES, 6 , GL_UNSIGNED_BYTE, i2);
 
-			glTexCoord2f(i+i,0);
-			glVertex2f(xstart+i,ystart);
-
-		glEnd();
+		glDeleteBuffers( 8 ,&vbuff);
+		
 		glEndOcclusionQueryNV();
+
+
 
 		glBeginOcclusionQueryNV(qid[1]);
-		glBegin(GL_QUADS);
-			//quad2
-			glTexCoord2f(i,0);
-			glVertex2f(xstart+i,ystart);
+		//quad2
+		glGenBuffers( 8 , &vbuff);
 
-			glTexCoord2f(i,0);
-			glVertex2f(xstart+i,ystart+1);
+		float v3[];
+		v3[0] = xstart+i;   v3[1] = ystart;
+		v3[2] = xstart+i;   v3[3] = ystart+1;
+		v3[4] = xstart+i+i; v3[5] = ystart+1;
+		v3[6] = xstart+i+i; v3[7] = ystart;
 
-			glTexCoord2f(i+i,0);
-			glVertex2f(xstart+i+i,ystart+1);
+		GLubyte i3[] = {0,1,2,   //first triangle (BL, TL ,TR)
+		               0,2,3};  //second traingle(BL, TR, BR)
 
-			glTexCoord2f(i+i,0);
-			glVertex2f(xstart+i+i,ystart);
-		glEnd();
+		/*glTexCoord2f(i,0);  need to implement
+		glTexCoord2f(i,0);
+		glTexCoord2f(i+i,0);
+		glTexCoord2f(i+i,0); */
+
+		glBindBuffer(GL_ARRAY_BUFFER,vbuff);
+		glBufferData(GL_ARRAY_BUFFER,8*sizeof(GLfloat), v3 , GL_STATIC_DRAW);
+		glDrawElements(GL_TRAINGLES, 6 , GL_UNSIGNED_BYTE, i3);
+
+		glDeleteBuffers( 8 ,&vbuff);
+		
 		glEndOcclusionQueryNV();
+
+
 
 		for(int j=0;j < 2;j++)
 		{
@@ -1134,16 +1229,16 @@ void LUDecomp::ComputeMax(int k,float*maxi)
  * @fn LUDecomp::GetMatrix
  * @brief Gets the matrix 
  */ 
-void LUDecomp::GetMatrix(float* m) 
+void LUDecomp::GetMatrix(float* m) //converted
 { 
-	GLint format = (_ncomponents == 1) ? GL_RED : GL_RGBA;
+	GLint format = (_ncomponents == 1) ? GL_LUMINANCE : GL_RGBA;
 	//assert(_bComputed);
 
 
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,fb);
-	glReadBuffer((_currentDrawSurface%2) ? GL_COLOR_ATTACHMENT0_EXT  : GL_COLOR_ATTACHMENT1_EXT );
-	glReadPixels(0,0,_m,_n,format,GL_FLOAT,(GLvoid*)m);
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,0);
+	glBindFramebuffer(GL_FRAMEBUFFER,fb);
+	//glReadBuffer((_currentDrawSurface%2) ? GL_COLOR_ATTACHMENT0_EXT  : GL_COLOR_ATTACHMENT1_EXT );
+	glReadPixels(0,0,_m,_n,format,FLOAT,(GLvoid*)m);
+	glBindFramebuffer(GL_FRAMEBUFFER,0);
 }
 
 
@@ -1155,7 +1250,7 @@ void LUDecomp::GetMatrix(float* m)
  * @fn LUDecomp::GetPivot
  * @brief Gets the pivot matrices
  */ 
-void LUDecomp::GetPivot(int* rpivot,int *cpivot) const
+void LUDecomp::GetPivot(int* rpivot,int *cpivot) const  //converted
 {
 	for (int i = 0; i < _n; ++i)
 		rpivot[i] = _rowpivot[i];
@@ -1171,7 +1266,7 @@ void LUDecomp::GetPivot(int* rpivot,int *cpivot) const
  * @fn LUDecomp::GetPivot
  * @brief Gets the pivot matrix 
  */ 
-void LUDecomp::GetPivot(int* rpivot) const
+void LUDecomp::GetPivot(int* rpivot) const  //converted
 {
 	for (int i = 0; i < _n; ++i)
 		rpivot[i] = _rowpivot[i];
@@ -1182,7 +1277,7 @@ void LUDecomp::GetPivot(int* rpivot) const
 // Function     	: static CheckForGLError
 // Description	  : local check for GL error
 //----------------------------------------------------------------------------
-void LUDecomp::_CheckForGLError( char *msg )
+void LUDecomp::_CheckForGLError( char *msg )   //converted
 {
 #if defined(DEBUG) | defined(_DEBUG)
 	GLenum errCode;
