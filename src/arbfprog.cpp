@@ -56,18 +56,60 @@
 
 #include <GL/glu.h>
 #include "arbfprog.h"
-#include "defines.h"
 
 ARBFProg::~ARBFProg()
 {
-	glDeleteProgramsARB(1,&prog_id);
+	glDeleteProgram(prog_id);
 }
-void ARBFProg::Load(char* prog)
+void ARBFProg::Load(char* vprog, char* fprog)
 {
-    glEnable(GL_FRAGMENT_PROGRAM_ARB);
-	glGenProgramsARB( 1, &prog_id );
-   	glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, prog_id);
-	glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB, GL_PROGRAM_FORMAT_ASCII_ARB, strlen(prog), prog);
+	GLuint fshader
+	GLuint vshader
+
+    glCreateProgram( 1, &prog_id );
+   	glUseProgram( prog_id );
+	glCreateShader(&fshader);
+	glCreateShader(&vshader);
+
+	glShaderSource(fshader, 1 , &fprog, 0);
+	glShaderSource(vshader, 1 , &vprog, 0);
+	
+	glCompileShader(fshader);
+	glCompileShader(vshader);
+	
+	Glint e;
+	glGetShaderiv(vshader, GL_COMPILE_STATUS, &e);
+	if (!e) {
+		printf("Error compiling vertex shader: /n");
+		int len;
+		char log[1024];
+		glGetShaderInfoLog(vshader, 1024, &len, log);
+		printf("%s \n" log);
+	}	 
+
+	glGetShaderiv(fshader, GL_COMPILE_STATUS, &e);
+	if (!e) {
+		printf("Error compiling vertex shader: /n");
+		int len;
+		char log[1024];
+		glGetShaderInfoLog(fshader, 1024, &len, log);
+		printf("%s \n" log);
+	}	 
+
+	glAttachShader( prog_id, vshader );
+	glAttachShader( prog_id, fshader );
+
+	glLinkProgram( prog_id );
+	
+	glGetProgramiv(prog_id, GL_LINK_STATUS, &e);
+	if (!e) {
+		printf("Error linking program: /n");
+		int len;
+		char log[1024];
+		glGetProgramInfoLog(prog_id, 1024, &len, log);
+		printf("%s \n" log);
+	}	 
+
 	GLenum error = glGetError();
 	if( error != GL_NO_ERROR )
 		fprintf( stderr, "ERROR\n%s\n", gluErrorString( error ) );
@@ -75,9 +117,8 @@ void ARBFProg::Load(char* prog)
 
 
 void ARBFProg::Bind()
-{
-	glEnable( GL_FRAGMENT_PROGRAM_ARB );  
-	glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, prog_id);
+{  
+	glUseProgram( prog_id );
 
 	GLenum error = glGetError();
 	if( error != GL_NO_ERROR )
@@ -86,21 +127,23 @@ void ARBFProg::Bind()
 }
 
 void ARBFProg::BindProg(){
-	glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, prog_id);
+	glUseProgram( prog_id );
     
 }
 
 void ARBFProg::Release()
 {
-	glDisable( GL_FRAGMENT_PROGRAM_ARB );  
+	glDeleteProgram( prog_id );
 	GLenum error = glGetError();
 	if( error != GL_NO_ERROR )
 		fprintf( stderr, "ERROR - Release()\n%s\n", gluErrorString( error ) );
 
 }
 
-void ARBFProg::SetConstant(GLuint index, GLfloat x, GLfloat y, GLfloat z, GLfloat w)
+void ARBFProg::SetConstant(char* name, GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 {
-	glProgramLocalParameter4fARB(GL_FRAGMENT_PROGRAM_ARB,index,x,y,z,w);
+	GLuint index = glGetUniformLocation( prog_id, name );
+	glUniform4f(index,x,y,z,w);
+
 }
 

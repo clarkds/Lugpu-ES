@@ -10,7 +10,7 @@
 #include <cmath>
 
 #include <GL/glut.h>
-#include "defines.h"
+#include <GL/glx.h>
 
 #include "common.h"
 #include "ludecomp.h"
@@ -31,10 +31,6 @@ void lugpu_initilize(int argc, char ** argv)   // not changing this, assuming gl
 	glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE);
 	glutInitWindowSize(1,1);
 	glutCreateWindow("LUGPU");
-
-	InitExts();
-
-
 
 	lu = new LUDecomp();
 	lu->Initialize(400, 400, 1,0,0);
@@ -99,55 +95,26 @@ void LUDecomp::SetSize(int m,int n)  //converted
 
 	glActiveTexture( GL_TEXTURE0 );
 	glBindTexture(GL_TEXTURE_2D, textureid[1]);  
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, _m, _n, 0, GL_LUMINANCE, FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, _m, _n, 0, GL_LUMINANCE, GL_FLOAT, NULL);
 
-	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture(GL_TEXTURE_2D, textureid[2]);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, _m, _n, 0, GL_LUMINANCE, FLOAT, NULL);
-
-
-	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture(GL_TEXTURE_2D, textureid[3]);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, _m, _n, 0, GL_LUMINANCE, FLOAT, NULL);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, fb);
+	
+	glBindFramebuffer(GL_FRAMEBUFFER, fb[0]);
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER,
                                   GL_COLOR_ATTACHMENT0,
                                   GL_TEXTURE_2D, textureid[0], 0);
 
+	glBindFramebuffer(GL_FRAMEBUFFER, fb[1]);
+
 	glFramebufferTexture2D(GL_FRAMEBUFFER,
-                                  GL_COLOR_ATTACHMENT1,
+                                  GL_COLOR_ATTACHMENT0,
                                   GL_TEXTURE_2D, textureid[1], 0);
 
-	glFramebufferTexture2D(GL_FRAMEBUFFER,
-                                  GL_COLOR_ATTACHMENT2,
-                                  GL_TEXTURE_2D, textureid[2], 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, fb[0]);
 
-	glFramebufferTexture2D(GL_FRAMEBUFFER,
-                                  GL_COLOR_ATTACHMENT3,
-                                  GL_TEXTURE_2D, textureid[3], 0);
-	
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrthof(0, _m, 0, _n, -1, 1);
-	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
 	glClearColor(0, 0, 0, 0);
 	glViewport(0, 0, _m, _n);
-
-	int i;
-	_rowpivot.clear();
-	_rowpivot.resize(_n);
-	for (i = 0; i < _n; ++i)
-		_rowpivot[i] = i;
-
-	_colpivot.clear();
-	_colpivot.resize(_m);
-	for (i = 0; i < _m; ++i)
-		_colpivot[i] = i;
 
 }
 
@@ -188,12 +155,11 @@ void LUDecomp::Initialize(int m, int n, int ncomp, int xblocksize, int yblocksiz
 
 	_bInitialized = true;
 
-	glGenFramebuffers(1, &fb);	
+	glGenFramebuffers(2, fb);	
 
 	glGenTextures(1, &textureid[0]);
 	glGenTextures(1, &textureid[1]);
-	glGenTextures(1, &textureid[2]);
-	glGenTextures(1, &textureid[3]);
+	
 
 	SetSize(_m,_n);
 
@@ -214,13 +180,13 @@ void LUDecomp::Initialize(int m, int n, int ncomp, int xblocksize, int yblocksiz
 void LUDecomp::_InitializeSlabOps()
 {
 
-	max_fp.Load(max_op);
-	swapcol_fp.Load(swapcol_op);
-	swaprow_fp.Load(swaprow_op);
-	divide_fp.Load(divide_op);
-	copy_fp.Load(copy_op);
-	quadtree_fp.Load(quadtree_op);
-	row_fp.Load(row_op);
+  max_fp.Load(vertex_shader, max_op);
+  swapcol_fp.Load(vertex_shader, swapcol_op);
+  swaprow_fp.Load(vertex_shader, swaprow_op);
+  divide_fp.Load(vertex_shader, divide_op);
+  copy_fp.Load(vertex_shader, copy_op);
+  quadtree_fp.Load(vertex_shader, quadtree_op);
+  row_fp.Load(vertex_shader, row_op);
 }
 
 //----------------------------------------------------------------------------
@@ -235,7 +201,50 @@ void LUDecomp::Shutdown()
 {
   
  }
+//---------------------------------------------------------------------------
+//Function             : LUDecomp::Draw
+//Draws
+//---------------------------------------------------------------------------
+/** 
+ * @fn LUDecomp::Draw()
+ * @brief Draws matrix
+ */
+void LUDecomp::Draw(ARBFProg* program, GLfloat* vertices, GLfloat* texcoord0, GLfloat* texcoord1, int n)
+{
+  GLuint posindex;
+  GLuint texindex0;
+  GLuint texindex1;
+  GLuint texloc;
+  GLubyte i[] = {0,1,2,   //first triangle (BL, TL ,TR)
+		 0,2,3};  //second traingle(BL, TR, BR)
+  
+  program -> Bind();
+  
+  texloc = glGetUniformLocation( program -> prog_id, "texture0");
+  glUniformli ( texloc, 0);
 
+  posindex = glGetAttribLocation ( program -> prog_id, "position");
+  texindex0 = glGetAttribLocation( program -> prog_id, "v_texcoord0");
+  texindex1 = glGetAttribLocation( program -> prog_id, "v_texcoord1");
+
+  glVertexAttribPointer ( posindex , 2 , GL_FLOAT, GL_FALSE, 0, vertices );
+  glVertexAttribPointer ( texindex0, 2 , GL_FLOAT, GL_FALSE, 0, texcoord0);
+  glVertexAttribPointer ( texindex1, 2 , GL_FLOAT, GL_FALSE, 0, texcoord1);
+
+  glEnableVertexAttribArray ( program-> posindex );
+  glEnableVertexAttribArray ( program->texindex0 );
+  glEnableVertexAttribArray ( program->texindex1 );
+  
+  if(n==8) {
+    glDrawElements( GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, i );
+  }
+  else if(n==4) {
+    glDrawArrays( GL_LINES, 0, 4);
+  }
+  else {
+    glDrawArrays( GL_TRIANGLES, 0 , n);
+  }
+}
 
 //----------------------------------------------------------------------------
 // Function     	: LUDecomp::CopyRect
@@ -247,11 +256,8 @@ void LUDecomp::Shutdown()
  * 
  * 
  */ 
-void LUDecomp::CopyRect(float xmin,float ymin,float xmax,float ymax)  //converted
+  void LUDecomp::CopyRect(ARBFProg* program,float xmin,float ymin,float xmax,float ymax,GLfloat* t)  //converted
 {
-	GLuint vbuff;
-	
-        glGenBuffers( 8 , &vbuff);
 	
 	GLfloat v[8];
 	v[0] = xmin;  v[1] = ymin;
@@ -259,14 +265,9 @@ void LUDecomp::CopyRect(float xmin,float ymin,float xmax,float ymax)  //converte
 	v[4] = xmax;  v[5] = ymax;
 	v[6] = xmax;  v[7] = ymin;
 
-	GLubyte i[] = {0,1,2,   //first triangle (BL, TL ,TR)
-		       0,2,3};  //second traingle(BL, TR, BR)
+	Draw(program, v, t, t, 8);
 
-	glBindBuffer(GL_ARRAY_BUFFER,vbuff);
-	glBufferData(GL_ARRAY_BUFFER,8*sizeof(GLfloat), v , GL_STATIC_DRAW);
-      	glDrawElements(GL_TRAINGLES, 6 , GL_UNSIGNED_BYTE, i);
-
-	glDeleteBuffers( 8 ,&vbuff);
+	
 }
 
 //----------------------------------------------------------------------------
@@ -281,63 +282,36 @@ void LUDecomp::CopyRect(float xmin,float ymin,float xmax,float ymax)  //converte
  */ 
 void LUDecomp::Divide(int k,float xmin,float ymin,float xmax,float ymax) //converting *texcoord
 { 	
-        divide_fp.Bind();
+  GLfloat t[];
+  for(int i = 0; i<8; i++) {
+    t[i] = k+.5;
+  }
+  
+  CopyRect(divide_fp,xmin,ymin,xmax,ymax,t);
 	
-	// need to implement glTexCoord2f here
-
-	CopyRect(xmin,ymin,xmax,ymax);
-	
-	divide_fp.Release();
-
-  /*	glBegin(GL_QUADS);
-	glTexCoord2f((float)k+.5,(float)k+.5);
-
-	glVertex2f(ymin,xmin);
-	glVertex2f(ymax,xmin);
-	glVertex2f(ymax,xmax);
-	glVertex2f(ymin,xmax);
-	glEnd();
-
-	divide_fp.Release();      */
-
 }
 
 void LUDecomp::SwapRows(float a,float b) //converted
 {
-	swaprow_fp.Bind();
-	swaprow_fp.SetConstant(0,b,b,b,b);
-
-	GLuint vbuff;
-
-	glGenBuffers( 4 , &vbuff);
+	swaprow_fp.SetConstant("y",b,b,b,b);
 
 	GLfloat v[4];
 	v[0] =  0; v[1] = a;
 	v[2] = _m; v[3] = a;
 	
-	glBindBuffer(GL_ARRAY_BUFFER, vbuff);
-	glBufferData(GL_ARRAY_BUFFER, 4*sizeof(GLfloat), v , GL_STATIC_DRAW);
-	glDrawArrays(GL_LINES, 0, 4);
+	Draw(swaprow_fp,v,v,v,8);
 
 }
 
 void LUDecomp::SwapCols(float a,float b) //converted
 {
-	swapcol_fp.Bind();
-	swapcol_fp.SetConstant(0,b,b,b,b);
-
-	GLuint vbuff;
-
-	glBenBuffers( 4, &vbuff);
+	swapcol_fp.SetConstant("y",b,b,b,b);
 
 	GLfloat v[4];
 	v[0] = a; v[1] =  0;
 	v[2] = a; v[3] = _n;
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbuff);
-	glBufferData(GL_ARRAY_BUFFER, 4*sizeof(GLfloat), v , GL_STATIC_DRAW);
-	glDrawArrays(GL_LINES, 0, 4);
-
+	Draw(swapcol_fp,v,v,v,4);
 }
 
 
@@ -370,50 +344,14 @@ void LUDecomp::PingPong01()
  */ 
 void LUDecomp::Refresh01()  //converted
 {
-	boundtexture = textureid[!current01];
-	glBindTexture(GL_TEXTURE_2D,boundtexture);
 
-	//believe these are not needed.  multiple drawing buffers has been deprecated
-	//glDrawBuffer((!current01) ? GL_COLOR_ATTACHMENT0_EXT : GL_COLOR_ATTACHMENT1_EXT);
-        //glReadBuffer((!current01) ? GL_COLOR_ATTACHMENT0_EXT : GL_COLOR_ATTACHMENT1_EXT);
+  glBindFramebuffer(GL_FRAMEBUFFER, current01);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, textureid[!current01]);
+   
+
 }
 
-//----------------------------------------------------------------------------
-// Function     	: LUDecomp::PingPong23
-// Description	    : 
-//----------------------------------------------------------------------------
-/**
- * @fn LUDecomp::PingPong23()
- * @brief switches between two different drawing / reading buffers
- * 
- * 
- */ 
-
-void LUDecomp::PingPong23()
-{
-	current23 = !current23;
-	Refresh23();
-}
-//----------------------------------------------------------------------------
-// Function     	: LUDecomp::Refresh23
-// Description	    : 
-//----------------------------------------------------------------------------
-/**
- * @fn LUDecomp::Refresh23()
- * @brief Refreshes to the current drawing buffer (in case something else had changed the drawing buffer)
- * 
- * 
- */ 
-
-void LUDecomp::Refresh23()  //converted
-{
-	boundtexture = textureid[!current23+2];
-	glBindTexture(GL_TEXTURE_2D,boundtexture);
-	
-	//no longer needed.  Multiple drawing buffers deprecated
-	//glDrawBuffer((!current23) ? GL_COLOR_ATTACHMENT2_EXT : GL_COLOR_ATTACHMENT3_EXT);
-	//glReadBuffer((!current23) ? GL_COLOR_ATTACHMENT2_EXT : GL_COLOR_ATTACHMENT3_EXT);
-}
 
 
 //----------------------------------------------------------------------------
@@ -426,7 +364,7 @@ void LUDecomp::Refresh23()  //converted
  * 
  */ 
 
-void LUDecomp::Compute(int pivot)  //converting   *multitexcoord
+void LUDecomp::Compute()  //converting   *multitexcoord
 {
 	
 	assert( _bInitialized );
@@ -462,8 +400,8 @@ void LUDecomp::Compute(int pivot)  //converting   *multitexcoord
 		//copy column / row
 
 
-		CopyRect(k,k,k+1,_n);
-		CopyRect(k,k,_m,k+1);
+		CopyRect(copy_fp,k,k,k+1,_n);
+		CopyRect(copy_fp,k,k,_m,k+1);
 		
 	
 		PingPong01();
@@ -475,42 +413,30 @@ void LUDecomp::Compute(int pivot)  //converting   *multitexcoord
 
 		PingPong01();
 
-		CopyRect(k+.5,k+.5,_m,k+1.5);
+		CopyRect(copy_fp,k+.5,k+.5,_m,k+1.5);
 
-		row_fp.Bind();
-
-
-		GLuint vbuff;
-
-		glGenBuffers( 8 , &vbuff);
-
-		float v[];
+				
+		GLfloat v[];
 		v[0] = k+1;  v[1] = k+1;
 		v[2] =  _m;  v[3] = k+1;
 		v[4] =  _m;  v[5] =  _n;
 		v[6] = k+1;  v[7] =  _n;
 
-		GLubyte i[] = {0,1,2,   //first triangle (BL, TL ,TR)
-		               0,2,3};  //second traingle(BL, TR, BR)
+		GLfloat t1[];
+		t1[0] = k+.5;  t1[1] = k+1;
+		t1[2] = k+.5;  t1[3] = k+1;
+		t1[4] = k+.5;  t1[5] =  _n;
+		t1[6] = k+.5;  t1[7] =  _n;
 
+		GLfloat t2[];
+		t2[0] = k+1;  t2[1] = k+.5;
+		t2[2] =  _m;  t2[3] = k+.5;
+		t2[4] =  _m;  t2[5] = k+.5;
+		t2[6] = k+1;  t2[7] = k+.5;
 
-	/*      need to implement this function call
-	        glMultiTexCoord2f(GL_TEXTURE0_ARB,k+.5,k+1);
-		glMultiTexCoord2f(GL_TEXTURE1_ARB,k+1,k+.5);
-		glMultiTexCoord2f(GL_TEXTURE0_ARB,k+.5,k+1);
-		glMultiTexCoord2f(GL_TEXTURE1_ARB,_m,k+.5);
-		glMultiTexCoord2f(GL_TEXTURE0_ARB,k+.5,_n);
-		glMultiTexCoord2f(GL_TEXTURE1_ARB,_m,k+.5);
-		glMultiTexCoord2f(GL_TEXTURE0_ARB,k+.5,_n);
-		glMultiTexCoord2f(GL_TEXTURE1_ARB,k+1,k+.5);   */
-
-		glBindBuffer(GL_ARRAY_BUFFER,vbuff);
-		glBufferData(GL_ARRAY_BUFFER,8*sizeof(GLfloat), v , GL_STATIC_DRAW);
-		glDrawElements(GL_TRAINGLES, 6 , GL_UNSIGNED_BYTE, i);
-
-		glDeleteBuffers( 8 ,&vbuff);
-
-
+		Draw(row_fp,v,t1,t2,8);
+		
+		
 		// Increase row coordinates
 		rYmin = (k+1) * deltaY;
 		rYmax = rYmin + deltaY;
@@ -589,8 +515,7 @@ void LUDecomp::GetMatrix(std::vector<std::vector<float> >& m) const  //converted
   int xoffset = 0;
   int yoffset = 0;
 
-	glBindFramebuffer(GL_FRAMEBUFFER,fb);
-	//glReadBuffer((_currentDrawSurface%2) ? GL_COLOR_ATTACHMENT0_EXT  : GL_COLOR_ATTACHMENT1_EXT );   asssumed not needed
+  glBindFramebuffer(GL_FRAMEBUFFER,(_currentDrawSurface%2) ? fb[0] : fb[1]));
 
 	for (int i = 0; i < _n; ++i)
 	{
@@ -620,8 +545,8 @@ void LUDecomp::GetMatrix(float* m) //converted
 	//assert(_bComputed);
 
 
-	glBindFramebuffer(GL_FRAMEBUFFER,fb);
-	//glReadBuffer((_currentDrawSurface%2) ? GL_COLOR_ATTACHMENT0_EXT  : GL_COLOR_ATTACHMENT1_EXT );
+	glBindFramebuffer(GL_FRAMEBUFFER,(_currentDrawSurface%2) ? fb[0] : fb[1]));
+	
 	glReadPixels(0,0,_m,_n,format,FLOAT,(GLvoid*)m);
 	glBindFramebuffer(GL_FRAMEBUFFER,0);
 }
