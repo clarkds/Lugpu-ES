@@ -10,22 +10,21 @@ char divide_op_old[] = "!!ARBfp1.0\n"
 "TEX   R0.x, fragment.position, texture[0], RECT;\n"
 "MULR  oCol.x, R0, R0.y;\n"
 "END\n"
-"# 4 instructions, 1 R-regs, 0 H-regs\n";
+"# 4 instructions, 1 R-regs, 0 H-regs\n";\n"
+"
+char divide_op[] = 
 
-char divide_op[] = "
+"varying vec2 texcoord0;\n"
+"uniform sampler2D texture0;\n"
 
-varying vec2 texcoord0;
-uniform sampler2D texture0;
+"void main(void) {\n"
+"  \n"
+"  vec4 t1 = texture2D(texture0, texcoord0);\n"
+"  vec4 t2 = texture2D(texture0, gl_FragCoord);\n"
 
-void main(void) {
-  
-  vec4 t1 = texture2D(texture0, texcoord0);
-  vec4 t2 = texture2D(texture0, gl_FragCoord);
+"  gl_FragColor = vec4(t2.x / t1.x, 0, 0, 0);\n"
+"}\n";
 
-  gl_FragColor = vec4(t2.x / t1.x, 0, 0, 0);
-}
-
-";
 
 char copy_op_old[] = "!!ARBfp1.0\n"
 "OPTION NV_fragment_program2;\n"
@@ -36,16 +35,14 @@ char copy_op_old[] = "!!ARBfp1.0\n"
 "TEX   oCol.x, fragment.position, texture[0], RECT;\n"
 "END\n";
 
-char copy_op[] = "
+char copy_op[] = 
 
-varying vec2 texcoord0;
-uniform sampler2D texture0;
+"varying vec2 texcoord0;\n"
+"uniform sampler2D texture0;\n"
 
-void main(void) {
-  gl_FragColor = texture2D(texture0, texcoord0);
-}
-
-";
+"void main(void) {\n"
+"  gl_FragColor = texture2D(texture0, texcoord0);\n"
+"}\n";
 
 
 char swaprow_op_old[] = "!!ARBfp1.0\n"
@@ -60,20 +57,18 @@ char swaprow_op_old[] = "!!ARBfp1.0\n"
 "TEX   oCol.x, R0, texture[0], RECT;\n"
 "END\n";
 
-char swaprow_op[] = "
+char swaprow_op[] = 
 
-varying vec2 texcoord0;
-uniform sampler2D texture0;
+"varying vec2 texcoord0;\n"
+"uniform sampler2D texture0;\n"
 
-uniform float y;
+"uniform float y;\n"
 
-void main(void) {
-  vec2 coord = texcoord0;
-  coord.y = y;
-  gl_FragColor = texture2D(texture0, texcoord0);
-}
-
-";
+"void main(void) {\n"
+"  vec2 coord = texcoord0;\n"
+"  coord.y = y;\n"
+"  gl_FragColor = texture2D(texture0, texcoord0);\n"
+"}\n";
 
 
 char swapcol_op_old[]="!!ARBfp1.0\n"
@@ -88,20 +83,18 @@ char swapcol_op_old[]="!!ARBfp1.0\n"
 "TEX   oCol.x, R0, texture[0], RECT;\n"
 "END\n";
 
-char swapcol_op[] = "
+char swapcol_op[] = 
 
-varying vec2 texcoord0;
-uniform sampler2D texture0;
+"varying vec2 texcoord0;\n"
+"uniform sampler2D texture0;\n"
 
-uniform float y;
+"uniform float y;\n"
 
-void main(void) {
-  vec2 coord = texcoord0;
-  coord.y = y;
-  gl_FragColor = texture2D(texture0, texcoord0);
-}
-
-";
+"void main(void) {\n"
+"  vec2 coord = texcoord0;\n"
+"  coord.y = y;\n"
+"  gl_FragColor = texture2D(texture0, texcoord0);\n"
+"}\n";
 
 char quadtree_op_old[]="!!ARBfp1.0\n"
 "OPTION NV_fragment_program2;\n"
@@ -118,22 +111,19 @@ char quadtree_op_old[]="!!ARBfp1.0\n"
 "MOVR  oCol.x, |R0|;\n"
 "END\n";
 
-char quadtree_op[] = "
+char quadtree_op[] = 
 
-varying vec2 texcord0;
-uniform sampler2D texture0;
-uniform sampler2D texture1;
+"varying vec2 texcord0;\n"
+"uniform sampler2D texture0;\n"
+"uniform sampler2D texture1;\n"
 
-uniform vec4 c;
+"uniform vec4 c;\n"
 
-void main(void) {
-  vec4 r0 = texture2D(texture1, gl_FragCoord);
-  vec4 r1 = texture2D(texture0, c);
-
-  
-}
-
-";
+"void main(void) {\n"
+"  vec4 r0 = texture2D(texture1, gl_FragCoord);\n"
+"  vec4 r1 = texture2D(texture0, c);\n"
+"  // FIXME \n"
+"}\n";
 
 
 char row_op_old[] = "!!ARBfp1.0\n"
@@ -151,21 +141,19 @@ char row_op_old[] = "!!ARBfp1.0\n"
 "MADR  oCol, -R0.x, R1.x, R2.x;\n"
 "END\n";
 
-char row_op[] = "
+char row_op[] = 
 
-varying vec2 texcoord0;
-varying vec2 texcoord1;
-uniform sampler2D texture0;
-uniform sampler2D texture1;
+"varying vec2 texcoord0;\n"
+"varying vec2 texcoord1;\n"
+"uniform sampler2D texture0;\n"
+"uniform sampler2D texture1;\n"
 
-void main(void) {
-  vec4 r0 = texture2D(texture0, texcoord0);
-  vec4 r2 = texture2D(texture0, gl_FragCoord);
-  vec4 r1 = texture2D(texture0, texcoord1);
-  gl_FragColor = r1.x + r2.x - r0.x;
-}
-
-";
+"void main(void) {\n"
+"  vec4 r0 = texture2D(texture0, texcoord0);\n"
+"  vec4 r2 = texture2D(texture0, gl_FragCoord);\n"
+"  vec4 r1 = texture2D(texture0, texcoord1);\n"
+"  gl_FragColor = r1.x + r2.x - r0.x;\n"
+"}\n";
 
 
 char max_op_old[] = "!!ARBfp1.0\n"
@@ -180,18 +168,17 @@ char max_op_old[] = "!!ARBfp1.0\n"
 "TEX   R0.x, fragment.position, texture[0], RECT;\n"
 "MAXR  oCol.x, |R0|, |R1|;\n"
 "END\n";
-//FIXME: are those abs's?
-char max_op[] = "
 
-varying vec2 texcoord0;
-uniform sampler2D texture0;
+//FIXME: are those abs's?\n"
 
-void main(void) {
-  vec4 r1 = texture2D(texcoord0, texture0);
-  vec4 r0 = texture2D(gl_FragCoord, texture0);
-  gl_FragColor = max(r0, r1);
-}
+char max_op[] = 
 
-";
+"varying vec2 texcoord0;\n"
+"uniform sampler2D texture0;\n"
 
+"void main(void) {\n"
+"  vec4 r1 = texture2D(texcoord0, texture0);\n"
+"  vec4 r0 = texture2D(gl_FragCoord, texture0);\n"
+"  gl_FragColor = max(r0, r1);\n"
+"}\n";
 
