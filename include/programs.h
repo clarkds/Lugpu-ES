@@ -9,13 +9,12 @@ char vertex_shader[] =
 "void main(void) {\n"
 "  texcoord0 = v_texcoord0;\n"
 "  texcoord1 = v_texcoord1;\n"
-"  gl_Position = position;\n"
+"  gl_Position = vec4(position.x, position.y, 0, 0);\n"
 "}\n";
 
 char divide_op_old[] = "!!ARBfp1.0\n"
 "OPTION NV_fragment_program2;\n"
 "PARAM c[1] = { program.local[0] };\n"
-"TEMP R0;\n"
 "TEMP RC;\n"
 "TEMP HC;\n"
 "OUTPUT oCol = result.color;\n"
@@ -34,7 +33,7 @@ char divide_op[] =
 "void main(void) {\n"
 "  \n"
 "  vec4 t1 = texture2D(texture0, texcoord0);\n"
-"  vec4 t2 = texture2D(texture0, gl_FragCoord);\n"
+"  vec4 t2 = texture2D(texture0, vec2(gl_FragCoord.x, gl_FragCoord.y));\n"
 
 "  gl_FragColor = vec4(t2.x / t1.x, 0, 0, 0);\n"
 "}\n";
@@ -134,8 +133,9 @@ char quadtree_op[] =
 "uniform vec4 c;\n"
 
 "void main(void) {\n"
-"  vec4 r0 = texture2D(texture1, gl_FragCoord);\n"
-"  vec4 r1 = texture2D(texture0, c);\n"
+"  vec4 r0 = texture2D(texture1, vec2(gl_FragCoord.x, gl_FragCoord.y));\n"
+"  vec4 r1 = texture2D(texture0, vec2(c.x, c.y));\n"
+"  gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n"
 "  // FIXME \n"
 "}\n";
 
@@ -164,9 +164,9 @@ char row_op[] =
 
 "void main(void) {\n"
 "  vec4 r0 = texture2D(texture0, texcoord0);\n"
-"  vec4 r2 = texture2D(texture0, gl_FragCoord);\n"
+"  vec4 r2 = texture2D(texture0, vec2(gl_FragCoord.x, gl_FragCoord.y));\n"
 "  vec4 r1 = texture2D(texture0, texcoord1);\n"
-"  gl_FragColor = r1.x + r2.x - r0.x;\n"
+"  gl_FragColor = vec4(r1.x + r2.x - r0.x, 0.0, 0.0, 0.0);\n"
 "}\n";
 
 
@@ -191,8 +191,8 @@ char max_op[] =
 "uniform sampler2D texture0;\n"
 
 "void main(void) {\n"
-"  vec4 r1 = texture2D(texcoord0, texture0);\n"
-"  vec4 r0 = texture2D(gl_FragCoord, texture0);\n"
+"  vec4 r1 = texture2D(texture0, texcoord0);\n"
+"  vec4 r0 = texture2D(texture0, vec2(gl_FragCoord.x, gl_FragCoord.y));\n"
 "  gl_FragColor = max(r0, r1);\n"
 "}\n";
 

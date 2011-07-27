@@ -63,14 +63,15 @@ public:
   ARBFProg(){}
   ~ARBFProg();
 
-  void Load(char* prog);
+  void Load(char* vprog, char* fprog);
   void Bind();
   void BindProg();
   void Release();
 
-  void SetConstant(GLuint index, GLfloat x, GLfloat y, GLfloat z, GLfloat w);
+  void SetConstant(char *name, GLfloat x, GLfloat y, GLfloat z, GLfloat w);
 
   GLuint prog_id;
+  char* source;
 };
 
 #endif 

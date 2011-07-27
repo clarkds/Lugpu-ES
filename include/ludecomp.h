@@ -26,7 +26,7 @@ public:
 	void Initialize(int m, int n, int ncomp = 1, int xblocksize = 0, int yblocksize = 0);
 	void Shutdown();
 
-	void Compute(int pivot);
+	void Compute();
 
 	void OutputPixels(int x,int y,int w,int h,int k = -1);
 	void Divide(int row);
@@ -36,7 +36,7 @@ public:
 	void GetMatrix(std::vector<std::vector<float> >& m) const;
 	void GetMatrix(float* m); 
 	bool IsInitialized() const { return _bInitialized; }
-	void CopyRect(ARMFProg* program,float xmin,float ymin,float xmax,float ymax,GLfloat* t);
+	void CopyRect(ARBFProg* program,float xmin,float ymin,float xmax,float ymax,GLfloat* t);
 
 	void Divide(int k,float xmin,float ymin,float xmax,float ymax);
 

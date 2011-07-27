@@ -10,7 +10,8 @@
 #include <cmath>
 
 #include <GL/glut.h>
-#include <GL/glx.h>
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
 
 #include "common.h"
 #include "ludecomp.h"
@@ -91,7 +92,7 @@ void LUDecomp::SetSize(int m,int n)  //converted
 
 	glActiveTexture( GL_TEXTURE0 );   
 	glBindTexture(GL_TEXTURE_2D, textureid[0]);   //changed GL_TEXTURE_RECTANGE to 2D
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, _m, _n, 0, GL_LUMINANCE, FLOAT, NULL); 
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, _m, _n, 0, GL_LUMINANCE, GL_FLOAT, NULL); 
 
 	glActiveTexture( GL_TEXTURE0 );
 	glBindTexture(GL_TEXTURE_2D, textureid[1]);  
@@ -187,6 +188,7 @@ void LUDecomp::_InitializeSlabOps()
   copy_fp.Load(vertex_shader, copy_op);
   quadtree_fp.Load(vertex_shader, quadtree_op);
   row_fp.Load(vertex_shader, row_op);
+  _CheckForGLError("Init SlabOps");
 }
 
 //----------------------------------------------------------------------------
@@ -217,11 +219,13 @@ void LUDecomp::Draw(ARBFProg* program, GLfloat* vertices, GLfloat* texcoord0, GL
   GLuint texloc;
   GLubyte i[] = {0,1,2,   //first triangle (BL, TL ,TR)
 		 0,2,3};  //second traingle(BL, TR, BR)
-  
+  _CheckForGLError("Draw Pre-Bind");
   program -> Bind();
+  _CheckForGLError("Draw Post-Bind");
+  
   
   texloc = glGetUniformLocation( program -> prog_id, "texture0");
-  glUniformli ( texloc, 0);
+  glUniform1i ( texloc, 0);
 
   posindex = glGetAttribLocation ( program -> prog_id, "position");
   texindex0 = glGetAttribLocation( program -> prog_id, "v_texcoord0");
@@ -231,9 +235,9 @@ void LUDecomp::Draw(ARBFProg* program, GLfloat* vertices, GLfloat* texcoord0, GL
   glVertexAttribPointer ( texindex0, 2 , GL_FLOAT, GL_FALSE, 0, texcoord0);
   glVertexAttribPointer ( texindex1, 2 , GL_FLOAT, GL_FALSE, 0, texcoord1);
 
-  glEnableVertexAttribArray ( program-> posindex );
-  glEnableVertexAttribArray ( program->texindex0 );
-  glEnableVertexAttribArray ( program->texindex1 );
+  glEnableVertexAttribArray ( posindex );
+  glEnableVertexAttribArray ( texindex0 );
+  glEnableVertexAttribArray ( texindex1 );
   
   if(n==8) {
     glDrawElements( GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, i );
@@ -265,7 +269,10 @@ void LUDecomp::Draw(ARBFProg* program, GLfloat* vertices, GLfloat* texcoord0, GL
 	v[4] = xmax;  v[5] = ymax;
 	v[6] = xmax;  v[7] = ymin;
 
-	Draw(program, v, t, t, 8);
+	if (t)
+		Draw(program, v, t, t, 8);
+	else
+		Draw(program, v, v, v, 8);
 
 	
 }
@@ -282,12 +289,12 @@ void LUDecomp::Draw(ARBFProg* program, GLfloat* vertices, GLfloat* texcoord0, GL
  */ 
 void LUDecomp::Divide(int k,float xmin,float ymin,float xmax,float ymax) //converting *texcoord
 { 	
-  GLfloat t[];
+  GLfloat t[8];
   for(int i = 0; i<8; i++) {
     t[i] = k+.5;
   }
   
-  CopyRect(divide_fp,xmin,ymin,xmax,ymax,t);
+  CopyRect(&divide_fp,xmin,ymin,xmax,ymax,t);
 	
 }
 
@@ -299,7 +306,7 @@ void LUDecomp::SwapRows(float a,float b) //converted
 	v[0] =  0; v[1] = a;
 	v[2] = _m; v[3] = a;
 	
-	Draw(swaprow_fp,v,v,v,8);
+	Draw(&swaprow_fp,v,v,v,8);
 
 }
 
@@ -309,9 +316,10 @@ void LUDecomp::SwapCols(float a,float b) //converted
 
 	GLfloat v[4];
 	v[0] = a; v[1] =  0;
+
 	v[2] = a; v[3] = _n;
 
-	Draw(swapcol_fp,v,v,v,4);
+	Draw(&swapcol_fp,v,v,v,4);
 }
 
 
@@ -385,7 +393,7 @@ void LUDecomp::Compute()  //converting   *multitexcoord
 
 	int maxrow,maxcol;
 
-	glBindFramebuffer(GL_FRAMEBUFFER, fb);
+	//glBindFramebuffer(GL_FRAMEBUFFER, fb);
 
 	PingPong01();
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -400,8 +408,8 @@ void LUDecomp::Compute()  //converting   *multitexcoord
 		//copy column / row
 
 
-		CopyRect(copy_fp,k,k,k+1,_n);
-		CopyRect(copy_fp,k,k,_m,k+1);
+		CopyRect(&copy_fp,k,k,k+1,_n, NULL);
+		CopyRect(&copy_fp,k,k,_m,k+1, NULL);
 		
 	
 		PingPong01();
@@ -413,28 +421,28 @@ void LUDecomp::Compute()  //converting   *multitexcoord
 
 		PingPong01();
 
-		CopyRect(copy_fp,k+.5,k+.5,_m,k+1.5);
+		CopyRect(&copy_fp,k+.5,k+.5,_m,k+1.5, NULL);
 
 				
-		GLfloat v[];
+		GLfloat v[8];
 		v[0] = k+1;  v[1] = k+1;
 		v[2] =  _m;  v[3] = k+1;
 		v[4] =  _m;  v[5] =  _n;
 		v[6] = k+1;  v[7] =  _n;
 
-		GLfloat t1[];
+		GLfloat t1[8];
 		t1[0] = k+.5;  t1[1] = k+1;
 		t1[2] = k+.5;  t1[3] = k+1;
 		t1[4] = k+.5;  t1[5] =  _n;
 		t1[6] = k+.5;  t1[7] =  _n;
 
-		GLfloat t2[];
+		GLfloat t2[8];
 		t2[0] = k+1;  t2[1] = k+.5;
 		t2[2] =  _m;  t2[3] = k+.5;
 		t2[4] =  _m;  t2[5] = k+.5;
 		t2[6] = k+1;  t2[7] = k+.5;
 
-		Draw(row_fp,v,t1,t2,8);
+		Draw(&row_fp,v,t1,t2,8);
 		
 		
 		// Increase row coordinates
@@ -474,10 +482,10 @@ void LUDecomp::LoadMatrix(float *data)  //converted
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,textureid[0]);   
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, _m, _n, format, FLOAT,data);	
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, _m, _n, format, GL_FLOAT,data);	
 	
 	//Go into FBO mode, bind the uploaded data as the source texture
-	glBindFramebuffer(GL_FRAMEBUFFER, fb);
+	glBindFramebuffer(GL_FRAMEBUFFER, fb[0]);
 	//glDrawBuffer( GL_COLOR_ATTACHMENT0_EXT);  assumed not needed
 	glColorMask(~0,~0,~0,~0);
 	//glEnable(GL_TEXTURE_RECTANGLE_NV);   assumed not needed	
@@ -515,11 +523,11 @@ void LUDecomp::GetMatrix(std::vector<std::vector<float> >& m) const  //converted
   int xoffset = 0;
   int yoffset = 0;
 
-  glBindFramebuffer(GL_FRAMEBUFFER,(_currentDrawSurface%2) ? fb[0] : fb[1]));
+  glBindFramebuffer(GL_FRAMEBUFFER,(_currentDrawSurface%2) ? fb[0] : fb[1]);
 
 	for (int i = 0; i < _n; ++i)
 	{
-		glReadPixels(xoffset, yoffset, _m, 1, format, FLOAT, &data[0]);
+		glReadPixels(xoffset, yoffset, _m, 1, format, GL_FLOAT, &data[0]);
 
 
 		m.push_back(data);
@@ -545,9 +553,9 @@ void LUDecomp::GetMatrix(float* m) //converted
 	//assert(_bComputed);
 
 
-	glBindFramebuffer(GL_FRAMEBUFFER,(_currentDrawSurface%2) ? fb[0] : fb[1]));
+	glBindFramebuffer(GL_FRAMEBUFFER,(_currentDrawSurface%2) ? fb[0] : fb[1]);
 	
-	glReadPixels(0,0,_m,_n,format,FLOAT,(GLvoid*)m);
+	glReadPixels(0,0,_m,_n,format, GL_FLOAT,(GLvoid*)m);
 	glBindFramebuffer(GL_FRAMEBUFFER,0);
 }
 
@@ -563,8 +571,8 @@ void LUDecomp::_CheckForGLError( char *msg )   //converted
 	const GLubyte *errStr;
 	if ((errCode = glGetError()) != GL_NO_ERROR) 
 	{
-		errStr = gluErrorString(errCode);
-		fprintf(stderr,"OpenGL ERROR: %s: %s\n", errStr, msg);
+		//errStr = gluErrorString(errCode);
+		fprintf(stderr,"OpenGL ERROR: 0x%x: %s\n", errCode, msg);
 	}
 #endif
 }

@@ -59,7 +59,7 @@ using std::vector;
 
 #include <math.h>
 
-#include <gl/glut.h>
+#include <GL/glut.h>
 #include "stopwatch.hpp"
 
 
@@ -94,7 +94,7 @@ int main (int argc, char *argv[])
 
 	lugpu_initilize(argc, argv);
 
-	m = 3500;
+	m = 512;
 	{
 		n = m;
 

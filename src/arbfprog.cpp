@@ -51,7 +51,8 @@
 #ifdef WIN32
 #include <windows.h>
 #else
-#include <GL/glx.h>
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
 #endif
 
 #include <GL/glu.h>
@@ -63,37 +64,35 @@ ARBFProg::~ARBFProg()
 }
 void ARBFProg::Load(char* vprog, char* fprog)
 {
-	GLuint fshader
-	GLuint vshader
+  memcpy(source,fprog,strlen(fprog));
+    prog_id = glCreateProgram();
 
-    glCreateProgram( 1, &prog_id );
-   	glUseProgram( prog_id );
-	glCreateShader(&fshader);
-	glCreateShader(&vshader);
+	GLuint fshader = glCreateShader(GL_FRAGMENT_SHADER);
+	GLuint vshader = glCreateShader(GL_VERTEX_SHADER);
 
-	glShaderSource(fshader, 1 , &fprog, 0);
-	glShaderSource(vshader, 1 , &vprog, 0);
+	glShaderSource(fshader, 1 , (const GLchar **) &fprog, 0);
+	glShaderSource(vshader, 1 , (const GLchar **) &vprog, 0);
 	
 	glCompileShader(fshader);
 	glCompileShader(vshader);
 	
-	Glint e;
+	GLint e;
 	glGetShaderiv(vshader, GL_COMPILE_STATUS, &e);
-	if (!e) {
-		printf("Error compiling vertex shader: /n");
+	if (e) {
+		fprintf(stderr, "Error compiling vertex shader:\n");
 		int len;
 		char log[1024];
 		glGetShaderInfoLog(vshader, 1024, &len, log);
-		printf("%s \n" log);
+		printf("%s\n", log);
 	}	 
 
 	glGetShaderiv(fshader, GL_COMPILE_STATUS, &e);
-	if (!e) {
-		printf("Error compiling vertex shader: /n");
+	if (e) {
+		printf("Error compiling fragment shader:\n%s", fprog);
 		int len;
 		char log[1024];
 		glGetShaderInfoLog(fshader, 1024, &len, log);
-		printf("%s \n" log);
+		printf("%s\n", log);
 	}	 
 
 	glAttachShader( prog_id, vshader );
@@ -102,17 +101,17 @@ void ARBFProg::Load(char* vprog, char* fprog)
 	glLinkProgram( prog_id );
 	
 	glGetProgramiv(prog_id, GL_LINK_STATUS, &e);
-	if (!e) {
-		printf("Error linking program: /n");
+	if (e) {
+		printf("Error linking program:\n");
 		int len;
 		char log[1024];
 		glGetProgramInfoLog(prog_id, 1024, &len, log);
-		printf("%s \n" log);
+		printf("%s\n", log);
 	}	 
 
 	GLenum error = glGetError();
 	if( error != GL_NO_ERROR )
-		fprintf( stderr, "ERROR\n%s\n", gluErrorString( error ) );
+		fprintf( stderr, "ERROR\n0x%x\n", error );
 }
 
 
@@ -121,8 +120,10 @@ void ARBFProg::Bind()
 	glUseProgram( prog_id );
 
 	GLenum error = glGetError();
-	if( error != GL_NO_ERROR )
-		fprintf( stderr, "ERROR - Bind()\n%s progid: %d\n", gluErrorString( error ),prog_id );
+	if( error != GL_NO_ERROR ){
+	  fprintf( stderr, "ERROR - Bind()\n0x%x progid: %d\n", error, prog_id );
+	  fprintf( stderr, "Error source code : %s \n" , source);
+	}
 		
 }
 
@@ -136,7 +137,7 @@ void ARBFProg::Release()
 	glDeleteProgram( prog_id );
 	GLenum error = glGetError();
 	if( error != GL_NO_ERROR )
-		fprintf( stderr, "ERROR - Release()\n%s\n", gluErrorString( error ) );
+		fprintf( stderr, "ERROR - Release()\n0x%x\n", error );
 
 }
 
