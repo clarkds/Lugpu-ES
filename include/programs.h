@@ -1,3 +1,17 @@
+char vertex_shader[] =
+"attribute vec2 position;\n"
+"attribute vec2 v_texcoord0;\n"
+"attribute vec2 v_texcoord1;\n"
+
+"varying vec2 texcoord0;\n"
+"varying vec2 texcoord1;\n"
+
+"void main(void) {\n"
+"  texcoord0 = v_texcoord0;\n"
+"  texcoord1 = v_texcoord1;\n"
+"  gl_Position = position;\n"
+"}\n";
+
 char divide_op_old[] = "!!ARBfp1.0\n"
 "OPTION NV_fragment_program2;\n"
 "PARAM c[1] = { program.local[0] };\n"
@@ -10,8 +24,8 @@ char divide_op_old[] = "!!ARBfp1.0\n"
 "TEX   R0.x, fragment.position, texture[0], RECT;\n"
 "MULR  oCol.x, R0, R0.y;\n"
 "END\n"
-"# 4 instructions, 1 R-regs, 0 H-regs\n";\n"
-"
+"# 4 instructions, 1 R-regs, 0 H-regs\n";
+
 char divide_op[] = 
 
 "varying vec2 texcoord0;\n"
