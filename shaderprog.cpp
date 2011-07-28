@@ -57,6 +57,7 @@ ShaderProg::~ShaderProg()
 void ShaderProg::Load(char* vprog, char* fprog)
 {
     strncpy(source, fprog, 1024);
+
     prog_id = glCreateProgram();
 
 	GLuint fshader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -109,15 +110,18 @@ void ShaderProg::Load(char* vprog, char* fprog)
 
 void ShaderProg::Bind()
 {  
+  	GLenum error = glGetError();
+	if( error != GL_NO_ERROR ){
+	  fprintf( stderr, "ERROR - Pre-Bind()\n0x%x progid: %d\n", error, prog_id );
+	}
+
 	glUseProgram( prog_id );
 
-	GLenum error = glGetError();
 	if( error != GL_NO_ERROR ){
 	  fprintf( stderr, "ERROR - Bind()\n0x%x progid: %d\n", error, prog_id );
-	  fprintf( stderr, "Error source code : %s \n" , source);
 	}
 		
-}
+	}
 
 void ShaderProg::BindProg(){
 	glUseProgram( prog_id );
