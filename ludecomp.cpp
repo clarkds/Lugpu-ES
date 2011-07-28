@@ -222,10 +222,10 @@ void LUDecomp::Shutdown()
  */
 void LUDecomp::Draw(ShaderProg* program, GLfloat* vertices, GLfloat* texcoord0, GLfloat* texcoord1, int n)
 {
-  GLuint posindex;
-  GLuint texindex0;
-  GLuint texindex1;
-  GLuint texloc;
+  GLint posindex = 10;
+  GLint texindex0 = 11;
+  GLint texindex1 = 12;
+  GLint texloc;
   GLubyte i[] = {0,1,2,   //first triangle (BL, TL ,TR)
 		 0,2,3};  //second traingle(BL, TR, BR)
   _CheckForGLError("Draw Pre-Bind");
@@ -242,11 +242,15 @@ void LUDecomp::Draw(ShaderProg* program, GLfloat* vertices, GLfloat* texcoord0, 
 
   glVertexAttribPointer ( posindex , 2 , GL_FLOAT, GL_FALSE, 0, vertices );
   glVertexAttribPointer ( texindex0, 2 , GL_FLOAT, GL_FALSE, 0, texcoord0);
-  glVertexAttribPointer ( texindex1, 2 , GL_FLOAT, GL_FALSE, 0, texcoord1);
+
+  if(texindex1 != -1) {
+    glVertexAttribPointer ( texindex1, 2 , GL_FLOAT, GL_FALSE, 0, texcoord1);
+    glEnableVertexAttribArray ( texindex1 );
+  }
 
   glEnableVertexAttribArray ( posindex );
   glEnableVertexAttribArray ( texindex0 );
-  glEnableVertexAttribArray ( texindex1 );
+  
   
   if(n==8) {
     glDrawElements( GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, i );
