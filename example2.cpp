@@ -46,105 +46,75 @@
                        Chapel Hill, NC 27599-3175
 
 \*****************************************************************************/
-#include <stdio.h>
+#define for if(true) for
 
-#ifdef WIN32
-#include <windows.h>
-#else
-#include <GLES2/gl2.h>
-#include <GLES2/gl2ext.h>
-#endif
 
-#include <GL/glu.h>
-#include "arbfprog.h"
+#include <vector>
+using std::vector;
+#include <algorithm>
+#include <iostream>
+#include <fstream>
+#include <assert.h>
+#include <time.h>
 
-ARBFProg::~ARBFProg()
+#include <math.h>
+
+#include "stopwatch.hpp"
+
+
+#include "ludecomp.h"
+
+using namespace std;
+
+void lehmer (float *mat, unsigned int M,unsigned int N, int ncomp = 1, bool append = false)
 {
-	glDeleteProgram(prog_id);
-}
-void ARBFProg::Load(char* vprog, char* fprog)
-{
-  memcpy(source,fprog,strlen(fprog));
-    prog_id = glCreateProgram();
+  float *pmat = mat;
+  for (unsigned int i = 0; i < N; i++) {
+    for (unsigned int j = 0; j < M; j++) {
+      for (int c = 0; c < ncomp; ++c)
+	  {
+        (*pmat++) = ((j>=i) ? ((float)i+1)/((float)j+1) : ((float)j+1)/((float)i+1));
+	  }
 
-	GLuint fshader = glCreateShader(GL_FRAGMENT_SHADER);
-	GLuint vshader = glCreateShader(GL_VERTEX_SHADER);
-
-	glShaderSource(fshader, 1 , (const GLchar **) &fprog, 0);
-	glShaderSource(vshader, 1 , (const GLchar **) &vprog, 0);
-	
-	glCompileShader(fshader);
-	glCompileShader(vshader);
-	
-	GLint e;
-	glGetShaderiv(vshader, GL_COMPILE_STATUS, &e);
-	if (e) {
-		fprintf(stderr, "Error compiling vertex shader:\n");
-		int len;
-		char log[1024];
-		glGetShaderInfoLog(vshader, 1024, &len, log);
-		printf("%s\n", log);
-	}	 
-
-	glGetShaderiv(fshader, GL_COMPILE_STATUS, &e);
-	if (e) {
-		printf("Error compiling fragment shader:\n%s", fprog);
-		int len;
-		char log[1024];
-		glGetShaderInfoLog(fshader, 1024, &len, log);
-		printf("%s\n", log);
-	}	 
-
-	glAttachShader( prog_id, vshader );
-	glAttachShader( prog_id, fshader );
-
-	glLinkProgram( prog_id );
-	
-	glGetProgramiv(prog_id, GL_LINK_STATUS, &e);
-	if (e) {
-		printf("Error linking program:\n");
-		int len;
-		char log[1024];
-		glGetProgramInfoLog(prog_id, 1024, &len, log);
-		printf("%s\n", log);
-	}	 
-
-	GLenum error = glGetError();
-	if( error != GL_NO_ERROR )
-		fprintf( stderr, "ERROR\n0x%x\n", error );
+    }
+    if (append)
+        for (int c = 0; c < ncomp; ++c)
+            (*pmat++) = -3.0f;
+  }
 }
 
+//--------------------------------------------------------------------------------------------
+int main (int argc, char *argv[])
+{
+	cout.precision(4);
 
-void ARBFProg::Bind()
-{  
-	glUseProgram( prog_id );
+	int n, m;
+	float *gpumat;
 
-	GLenum error = glGetError();
-	if( error != GL_NO_ERROR ){
-	  fprintf( stderr, "ERROR - Bind()\n0x%x progid: %d\n", error, prog_id );
-	  fprintf( stderr, "Error source code : %s \n" , source);
+	lugpu_initilize(argc, argv);
+
+	m = 512;
+	{
+		n = m;
+
+
+		gpumat = new float[m * n];
+	
+		lehmer(gpumat,m,n,1,false);
+
+		int info;
+
+		int *pivot = new int[n];
+
+		Stopwatch gputimer("gpu timer");
+		gputimer.Start();
+
+		lugpu_sgetrf(&m,&n,gpumat,&m,pivot,&info);
+
+		gputimer.Stop();
+
+		cout << m << "\t" << gputimer  << endl;
+	
 	}
-		
+	return 1;
 }
-
-void ARBFProg::BindProg(){
-	glUseProgram( prog_id );
-    
-}
-
-void ARBFProg::Release()
-{
-	glDeleteProgram( prog_id );
-	GLenum error = glGetError();
-	if( error != GL_NO_ERROR )
-		fprintf( stderr, "ERROR - Release()\n0x%x\n", error );
-
-}
-
-void ARBFProg::SetConstant(char* name, GLfloat x, GLfloat y, GLfloat z, GLfloat w)
-{
-	GLuint index = glGetUniformLocation( prog_id, name );
-	glUniform4f(index,x,y,z,w);
-
-}
-

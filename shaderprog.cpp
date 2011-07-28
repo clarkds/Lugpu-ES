@@ -46,32 +46,97 @@
                        Chapel Hill, NC 27599-3175
 
 \*****************************************************************************/
+#include <stdio.h>
 
-#ifndef _ARBFPROG_H
-#define _ARBFPROG_H
+#include "shaderprog.h"
 
-#include <string.h>
-#ifdef WIN32
-#include <windows.h>
-#else
-#include <GL/gl.h>
-#include <GL/glx.h>
-#endif
-#include <GL/glu.h>
-class ARBFProg{
-public:
-  ARBFProg(){}
-  ~ARBFProg();
+ShaderProg::~ShaderProg()
+{
+	glDeleteProgram(prog_id);
+}
+void ShaderProg::Load(char* vprog, char* fprog)
+{
+  memcpy(source,fprog,strlen(fprog));
+    prog_id = glCreateProgram();
 
-  void Load(char* vprog, char* fprog);
-  void Bind();
-  void BindProg();
-  void Release();
+	GLuint fshader = glCreateShader(GL_FRAGMENT_SHADER);
+	GLuint vshader = glCreateShader(GL_VERTEX_SHADER);
 
-  void SetConstant(char *name, GLfloat x, GLfloat y, GLfloat z, GLfloat w);
+	glShaderSource(fshader, 1 , (const GLchar **) &fprog, 0);
+	glShaderSource(vshader, 1 , (const GLchar **) &vprog, 0);
+	
+	glCompileShader(fshader);
+	glCompileShader(vshader);
+	
+	GLint e;
+	glGetShaderiv(vshader, GL_COMPILE_STATUS, &e);
+	if (e) {
+		fprintf(stderr, "Error compiling vertex shader:\n");
+		int len;
+		char log[1024];
+		glGetShaderInfoLog(vshader, 1024, &len, log);
+		printf("%s\n", log);
+	}	 
 
-  GLuint prog_id;
-  char* source;
-};
+	glGetShaderiv(fshader, GL_COMPILE_STATUS, &e);
+	if (e) {
+		printf("Error compiling fragment shader:\n%s", fprog);
+		int len;
+		char log[1024];
+		glGetShaderInfoLog(fshader, 1024, &len, log);
+		printf("%s\n", log);
+	}	 
 
-#endif 
+	glAttachShader( prog_id, vshader );
+	glAttachShader( prog_id, fshader );
+
+	glLinkProgram( prog_id );
+	
+	glGetProgramiv(prog_id, GL_LINK_STATUS, &e);
+	if (e) {
+		printf("Error linking program:\n");
+		int len;
+		char log[1024];
+		glGetProgramInfoLog(prog_id, 1024, &len, log);
+		printf("%s\n", log);
+	}	 
+
+	GLenum error = glGetError();
+	if( error != GL_NO_ERROR )
+		fprintf( stderr, "ERROR\n0x%x\n", error );
+}
+
+
+void ShaderProg::Bind()
+{  
+	glUseProgram( prog_id );
+
+	GLenum error = glGetError();
+	if( error != GL_NO_ERROR ){
+	  fprintf( stderr, "ERROR - Bind()\n0x%x progid: %d\n", error, prog_id );
+	  fprintf( stderr, "Error source code : %s \n" , source);
+	}
+		
+}
+
+void ShaderProg::BindProg(){
+	glUseProgram( prog_id );
+    
+}
+
+void ShaderProg::Release()
+{
+	glDeleteProgram( prog_id );
+	GLenum error = glGetError();
+	if( error != GL_NO_ERROR )
+		fprintf( stderr, "ERROR - Release()\n0x%x\n", error );
+
+}
+
+void ShaderProg::SetConstant(char* name, GLfloat x, GLfloat y, GLfloat z, GLfloat w)
+{
+	GLuint index = glGetUniformLocation( prog_id, name );
+	glUniform4f(index,x,y,z,w);
+
+}
+

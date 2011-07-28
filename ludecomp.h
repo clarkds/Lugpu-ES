@@ -7,7 +7,7 @@ void lugpu_initilize(int argc, char ** argv);
 
 #include <vector>
 
-#include "arbfprog.h"
+#include "shaderprog.h"
 
 // forward decl
 class RenderTexture;
@@ -30,13 +30,13 @@ public:
 
 	void OutputPixels(int x,int y,int w,int h,int k = -1);
 	void Divide(int row);
-	void Draw(ARBFProg* program, GLfloat* vertices, GLfloat* texcoord0, GLfloat* texcoord1, int n );
+	void Draw(ShaderProg* program, GLfloat* vertices, GLfloat* texcoord0, GLfloat* texcoord1, int n );
 
 	void LoadMatrix(float *data);
 	void GetMatrix(std::vector<std::vector<float> >& m) const;
 	void GetMatrix(float* m); 
 	bool IsInitialized() const { return _bInitialized; }
-	void CopyRect(ARBFProg* program,float xmin,float ymin,float xmax,float ymax,GLfloat* t);
+	void CopyRect(ShaderProg* program,float xmin,float ymin,float xmax,float ymax,GLfloat* t);
 
 	void Divide(int k,float xmin,float ymin,float xmax,float ymax);
 
@@ -78,13 +78,13 @@ public:
 	bool            _bInitialized;
 	bool            _bComputed;
   
-	ARBFProg max_fp;
-	ARBFProg divide_fp;
-	ARBFProg copy_fp;
-	ARBFProg swaprow_fp;
-	ARBFProg swapcol_fp;
-	ARBFProg quadtree_fp;
-	ARBFProg row_fp;
+	ShaderProg max_fp;
+	ShaderProg divide_fp;
+	ShaderProg copy_fp;
+	ShaderProg swaprow_fp;
+	ShaderProg swapcol_fp;
+	ShaderProg quadtree_fp;
+	ShaderProg row_fp;
 
 	
 

@@ -46,76 +46,41 @@
                        Chapel Hill, NC 27599-3175
 
 \*****************************************************************************/
-#define for if(true) for
 
+#ifndef _SHADERPROG_H
+#define _SHADERPROG_H
 
-#include <vector>
-using std::vector;
-#include <algorithm>
-#include <iostream>
-#include <fstream>
-#include <assert.h>
-#include <time.h>
+#include <string.h>
+#ifdef WIN32
+#include <windows.h>
 
-#include <math.h>
+#elif defined(__APPLE__)
 
-#include <GL/glut.h>
-#include "stopwatch.hpp"
+#include <OpenGL/gl.h>
+#include <OpenGL/glext.h>
+#include <GLUT/glut.h>
 
+#else
 
-#include "ludecomp.h"
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
 
-using namespace std;
+#endif
 
-void lehmer (float *mat, unsigned int M,unsigned int N, int ncomp = 1, bool append = false)
-{
-  float *pmat = mat;
-  for (unsigned int i = 0; i < N; i++) {
-    for (unsigned int j = 0; j < M; j++) {
-      for (int c = 0; c < ncomp; ++c)
-	  {
-        (*pmat++) = ((j>=i) ? ((float)i+1)/((float)j+1) : ((float)j+1)/((float)i+1));
-	  }
+class ShaderProg{
+public:
+  ShaderProg(){}
+  ~ShaderProg();
 
-    }
-    if (append)
-        for (int c = 0; c < ncomp; ++c)
-            (*pmat++) = -3.0f;
-  }
-}
+  void Load(char* vprog, char* fprog);
+  void Bind();
+  void BindProg();
+  void Release();
 
-//--------------------------------------------------------------------------------------------
-int main (int argc, char *argv[])
-{
-	cout.precision(4);
+  void SetConstant(char *name, GLfloat x, GLfloat y, GLfloat z, GLfloat w);
 
-	int n, m;
-	float *gpumat;
+  GLuint prog_id;
+  char* source;
+};
 
-	lugpu_initilize(argc, argv);
-
-	m = 512;
-	{
-		n = m;
-
-
-		gpumat = new float[m * n];
-	
-		lehmer(gpumat,m,n,1,false);
-
-		int info;
-
-		int *pivot = new int[n];
-
-		Stopwatch gputimer("gpu timer");
-		gputimer.Start();
-
-		lugpu_sgetrf(&m,&n,gpumat,&m,pivot,&info);
-
-		gputimer.Stop();
-
-		cout << m << "\t" << gputimer  << endl;
-	
-	}
-	return 1;
-}
+#endif 
