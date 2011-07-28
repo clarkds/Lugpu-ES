@@ -9,15 +9,24 @@
 #include <vector>
 #include <cmath>
 
+#ifdef __APPLE__
+#include <OpenGL/gl3.h>
+#include <OpenGL/gl3ext.h>
+#include <GLUT/glut.h>
+
+#else
+
 #include <GL/glut.h>
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
+
+#endif
 
 #include "common.h"
 #include "ludecomp.h"
 #include "stopwatch.hpp"
 
-#include "arbfprog.h"
+#include "shaderprog.h"
 
 #include "programs.h"
 
@@ -211,7 +220,7 @@ void LUDecomp::Shutdown()
  * @fn LUDecomp::Draw()
  * @brief Draws matrix
  */
-void LUDecomp::Draw(ARBFProg* program, GLfloat* vertices, GLfloat* texcoord0, GLfloat* texcoord1, int n)
+void LUDecomp::Draw(ShaderProg* program, GLfloat* vertices, GLfloat* texcoord0, GLfloat* texcoord1, int n)
 {
   GLuint posindex;
   GLuint texindex0;
@@ -260,7 +269,7 @@ void LUDecomp::Draw(ARBFProg* program, GLfloat* vertices, GLfloat* texcoord0, GL
  * 
  * 
  */ 
-  void LUDecomp::CopyRect(ARBFProg* program,float xmin,float ymin,float xmax,float ymax,GLfloat* t)  //converted
+  void LUDecomp::CopyRect(ShaderProg* program,float xmin,float ymin,float xmax,float ymax,GLfloat* t)  //converted
 {
 	
 	GLfloat v[8];

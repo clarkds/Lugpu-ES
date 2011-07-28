@@ -3,6 +3,9 @@ char vertex_shader[] =
 "attribute vec2 v_texcoord0;\n"
 "attribute vec2 v_texcoord1;\n"
 
+"uniform sampler2D texture0;\n"
+"uniform sampler2D texture1;\n"
+
 "varying vec2 texcoord0;\n"
 "varying vec2 texcoord1;\n"
 
