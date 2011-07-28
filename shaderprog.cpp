@@ -15,8 +15,8 @@ void ShaderProg::Load(char* vprog, char* fprog)
 	GLuint fshader = glCreateShader(GL_FRAGMENT_SHADER);
 	GLuint vshader = glCreateShader(GL_VERTEX_SHADER);
 
-	glShaderSource(fshader, 1 , (const GLchar **) &fprog, 0);
-	glShaderSource(vshader, 1 , (const GLchar **) &vprog, 0);
+	glShaderSource(fshader, 1 , (const char **) &fprog, 0);
+	glShaderSource(vshader, 1 , (const char **) &vprog, 0);
 	
 	glCompileShader(fshader);
 	glCompileShader(vshader);

@@ -1,1 +1,1 @@
-512	gpu timer time: 0.08942 sec
+chooseConfig: 12288No EGL configurations were returned.

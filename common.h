@@ -61,4 +61,15 @@ enum { LUGPU_NOPIVOT =0 , LUGPU_PARTIALPIVOT=1, LUGPU_FULLPIVOT=2};
 
 #define MKL_PIVOT 0
 
+#define EGL_CHECK(x) \
+    x; \
+    { \
+        EGLint eglError = eglGetError(); \
+        if(eglError != EGL_SUCCESS) { \
+            fprintf(stderr, "eglGetError() = %i (0x%.8x) at line %i\n", eglError, eglError, __LINE__); \
+            exit(1); \
+        } \
+    }
+
+
 #endif

@@ -1,6 +1,5 @@
 /*******************notes***************/
-/*  need to implement texcoord,multitexcoord and find solution for Occlusion Queries
-    Also need to only allow 1 visible frame buffer at a time  */
+
 
 #define for if(1) for
 
@@ -8,6 +7,10 @@
 #include <assert.h>
 #include <vector>
 #include <cmath>
+#include <stdio.h>
+#include <stdlib.h>
+#include "window.h"
+
 
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
@@ -16,9 +19,10 @@
 
 #else
 
-#include <GL/glut.h>
+#include <EGL/egl.h>
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
+#include <X11/Xlib.h>
 
 #endif
 
@@ -33,17 +37,89 @@
 using namespace std;
 
 LUDecomp * lu;
-
+Window hWindow;
+Display *hDisplay;
 
 void lugpu_initilize(int argc, char ** argv)   // not changing this, assuming glutES is identical
 {
-	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE);
+        /*glutInit(&argc, argv);
+        glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE);
 	glutInitWindowSize(1,1);
-	glutCreateWindow("LUGPU");
+	glutCreateWindow("LUGPU");*/
 
+	EGLDisplay	sEGLDisplay;
+	EGLContext	sEGLContext;
+	EGLSurface	sEGLSurface;
+	const unsigned int uiWidth  = 640;
+	const unsigned int uiHeight = 480;
+	
+	/* EGL Configuration */
+	
+	EGLint aEGLAttributes[] = {
+		EGL_RED_SIZE, 0,
+		EGL_GREEN_SIZE, 0,
+		EGL_BLUE_SIZE, 0,
+		EGL_LUMINANCE_SIZE, 32,
+		EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+		EGL_NONE
+	};
+	
+	EGLint aEGLContextAttributes[] = {
+		EGL_CONTEXT_CLIENT_VERSION, 2,
+		EGL_NONE
+	};
+	
+	EGLConfig	aEGLConfigs[1];
+	EGLint		cEGLConfigs;
+
+	XSetWindowAttributes win_attrs;
+	int attrs[64], idx = 0, num_config = 0;
+	int major, minor;
+ 	Colormap colormap;
+    	XVisualInfo *pVisual;
+    	XEvent e;
+
+	/*hDisplay = XOpenDisplay(NULL);
+
+	if (!hDisplay) {
+	  printf("Could not open display\n");
+	  exit(-1);
+	  }*/
+	
+	sEGLDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+	//sEGLDisplay = EGL_CHECK(eglGetDisplay((EGLNativeDisplayType)hDisplay));
+	
+	eglInitialize(sEGLDisplay, NULL, NULL);
+	EGL_CHECK(eglChooseConfig(sEGLDisplay, aEGLAttributes, aEGLConfigs, 1, &cEGLConfigs));
+	fprintf(stderr, "chooseConfig: %i", eglGetError());
+	if (cEGLConfigs == 0) {
+        printf("No EGL configurations were returned.\n");
+		exit(-1);
+    }
+
+	hWindow = create_window("OpenGL ES 2.0 Example on a Linux Desktop", uiWidth,
+				uiHeight, hDisplay, sEGLDisplay, aEGLConfigs[0], &colormap, &pVisual);
+
+	sEGLSurface = EGL_CHECK(eglCreateWindowSurface(sEGLDisplay, aEGLConfigs[0], (EGLNativeWindowType)hWindow, NULL));
+
+	if (sEGLSurface == EGL_NO_SURFACE) {
+	  printf("Failed to create EGL surface.\n");
+	  exit(-1);
+	}
+	
+ 	sEGLContext = EGL_CHECK(eglCreateContext(sEGLDisplay, aEGLConfigs[0], EGL_NO_CONTEXT, aEGLContextAttributes));
+
+	if (sEGLContext == EGL_NO_CONTEXT) {
+	  printf("Failed to create EGL context.\n");
+	  exit(-1);
+	}
+	
+	EGL_CHECK(eglMakeCurrent(sEGLDisplay, sEGLSurface, sEGLSurface, sEGLContext));
+	LUDecomp::_CheckForGLError("Window Created");
 	lu = new LUDecomp();
 	lu->Initialize(400, 400, 1,0,0);
+
+	fprintf(stderr, "extensions supported: %s",(char* )glGetString(GL_EXTENSIONS));
 	
 }
 
@@ -99,14 +175,17 @@ void LUDecomp::SetSize(int m,int n)  //converted
 	_m = m;
 	_n = n;
 
-	glActiveTexture( GL_TEXTURE0 );   
+	glActiveTexture( GL_TEXTURE0 );  
 	glBindTexture(GL_TEXTURE_2D, textureid[0]);   //changed GL_TEXTURE_RECTANGE to 2D
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, _m, _n, 0, GL_LUMINANCE, GL_FLOAT, NULL); 
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, _m, _n, 0, GL_LUMINANCE, GL_FLOAT, NULL);
+
+	_CheckForGLError("Create Texture0");
 
 	glActiveTexture( GL_TEXTURE0 );
 	glBindTexture(GL_TEXTURE_2D, textureid[1]);  
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, _m, _n, 0, GL_LUMINANCE, GL_FLOAT, NULL);
 
+	_CheckForGLError("Create Texture1");
 	
 	glBindFramebuffer(GL_FRAMEBUFFER, fb[0]);
 
@@ -114,17 +193,22 @@ void LUDecomp::SetSize(int m,int n)  //converted
                                   GL_COLOR_ATTACHMENT0,
                                   GL_TEXTURE_2D, textureid[0], 0);
 
+	_CheckForGLError("Bind Texture0");
+	
 	glBindFramebuffer(GL_FRAMEBUFFER, fb[1]);
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER,
                                   GL_COLOR_ATTACHMENT0,
                                   GL_TEXTURE_2D, textureid[1], 0);
 
+	_CheckForGLError("Bind Texture1");
+
 	glBindFramebuffer(GL_FRAMEBUFFER, fb[0]);
 
 	glDepthMask(GL_FALSE);
 	glClearColor(0, 0, 0, 0);
 	glViewport(0, 0, _m, _n);
+	_CheckForGLError("SetSize complete");
 
 }
 
@@ -174,6 +258,7 @@ void LUDecomp::Initialize(int m, int n, int ncomp, int xblocksize, int yblocksiz
 	SetSize(_m,_n);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	_CheckForGLError("Init complete");
 }
 
 //----------------------------------------------------------------------------
@@ -412,6 +497,8 @@ void LUDecomp::Compute()  //converting   *multitexcoord
 	glClear(GL_COLOR_BUFFER_BIT);
 	PingPong01();
 
+	_CheckForGLError("Compute Init");
+
 	for (int k = 0; k < max(_n-1,_m-1); ++k)
 	{
 		
@@ -511,6 +598,7 @@ void LUDecomp::LoadMatrix(float *data)  //converted
 
 
 	++_currentDrawSurface;
+	_CheckForGLError("LoadMatrix Complete");
 
 }
 
@@ -579,7 +667,6 @@ void LUDecomp::GetMatrix(float* m) //converted
 //----------------------------------------------------------------------------
 void LUDecomp::_CheckForGLError( const char *msg )   //converted
 {
-#if defined(DEBUG) | defined(_DEBUG)
 	GLenum errCode;
 	const GLubyte *errStr;
 	if ((errCode = glGetError()) != GL_NO_ERROR) 
@@ -587,5 +674,4 @@ void LUDecomp::_CheckForGLError( const char *msg )   //converted
 		//errStr = gluErrorString(errCode);
 		fprintf(stderr,"OpenGL ERROR: 0x%x: %s\n", errCode, msg);
 	}
-#endif
 }
