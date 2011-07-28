@@ -104,7 +104,7 @@ void ShaderProg::Load(char* vprog, char* fprog)
 
 	GLenum error = glGetError();
 	if( error != GL_NO_ERROR )
-		fprintf( stderr, "ERROR\n0x%x\n", error );
+		fprintf( stderr, "Program compile error: \n0x%x\n", error );
 }
 
 
