@@ -9,7 +9,7 @@
 #include <cmath>
 #include <stdio.h>
 #include <stdlib.h>
-#include "window.h"
+
 
 
 #ifdef __APPLE__
@@ -23,6 +23,7 @@
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
 
 #endif
 
@@ -34,92 +35,132 @@
 
 #include "programs.h"
 
+#define WINDOW_HEIGHT 480
+#define WINDOW_WIDTH  640
+
 using namespace std;
 
 LUDecomp * lu;
-Window hWindow;
-Display *hDisplay;
 
 void lugpu_initilize(int argc, char ** argv)   // not changing this, assuming glutES is identical
 {
-        /*glutInit(&argc, argv);
-        glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE);
-	glutInitWindowSize(1,1);
-	glutCreateWindow("LUGPU");*/
+  //X11 Varialbes
+  Window			x11Window	= 0;
+  Display*			x11Display	= 0;
+  long				x11Screen	= 0;
+  XVisualInfo*		        x11Visual	= 0;
+  Colormap			x11Colormap	= 0;
 
-	EGLDisplay	sEGLDisplay;
-	EGLContext	sEGLContext;
-	EGLSurface	sEGLSurface;
-	const unsigned int uiWidth  = 640;
-	const unsigned int uiHeight = 480;
-	
-	/* EGL Configuration */
-	
-	EGLint aEGLAttributes[] = {
-		EGL_RED_SIZE, 0,
-		EGL_GREEN_SIZE, 0,
-		EGL_BLUE_SIZE, 0,
-		EGL_LUMINANCE_SIZE, 32,
-		EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
-		EGL_NONE
-	};
-	
-	EGLint aEGLContextAttributes[] = {
-		EGL_CONTEXT_CLIENT_VERSION, 2,
-		EGL_NONE
-	};
-	
-	EGLConfig	aEGLConfigs[1];
-	EGLint		cEGLConfigs;
 
-	XSetWindowAttributes win_attrs;
-	int attrs[64], idx = 0, num_config = 0;
-	int major, minor;
- 	Colormap colormap;
-    	XVisualInfo *pVisual;
-    	XEvent e;
+  //EGL Variables
 
-	/*hDisplay = XOpenDisplay(NULL);
+  EGLDisplay			eglDisplay	= 0;
+  EGLConfig			eglConfig	= 0;
+  EGLSurface			eglSurface	= 0;
+  EGLContext			eglContext	= 0;
 
-	if (!hDisplay) {
-	  printf("Could not open display\n");
-	  exit(-1);
-	  }*/
+  //EGL Config Variables
+
+  EGLint  aEGLAttributes[] = {
+    EGL_RED_SIZE, 8,
+    EGL_GREEN_SIZE, 8,
+    EGL_BLUE_SIZE, 8,
+    EGL_LUMINANCE_SIZE, 32,
+    EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+    EGL_NONE
+  };
+  
+  EGLConfig   aEGLConfigs[1];
+  EGLint      cEGLConfigs;
+
+  const unsigned int uiWidth  = 640;
+  const unsigned int uiHeight = 480;
 	
-	sEGLDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-	//sEGLDisplay = EGL_CHECK(eglGetDisplay((EGLNativeDisplayType)hDisplay));
+  EGLint ai32ContextAttribs[] = { EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE };
 	
-	eglInitialize(sEGLDisplay, NULL, NULL);
-	EGL_CHECK(eglChooseConfig(sEGLDisplay, aEGLAttributes, aEGLConfigs, 1, &cEGLConfigs));
-	fprintf(stderr, "chooseConfig: %i", eglGetError());
-	if (cEGLConfigs == 0) {
+  //create Native WindowType for OpenGL ES output
+
+  Window			sRootWindow;
+  XSetWindowAttributes	        sWA;
+  unsigned int			ui32Mask;
+  int				i32Depth;
+  int 				i32Width, i32Height;
+	
+  // Initializes the display and screen
+  x11Display = XOpenDisplay( 0 );
+  if (!x11Display)
+    {
+      printf("Error: Unable to open X display\n");
+      exit(-1);
+    }
+  x11Screen = XDefaultScreen( x11Display );
+
+  // Gets the window parameters
+  sRootWindow = RootWindow(x11Display, x11Screen);
+  i32Depth = DefaultDepth(x11Display, x11Screen);
+  x11Visual = new XVisualInfo;
+  XMatchVisualInfo( x11Display, x11Screen, i32Depth, TrueColor, x11Visual);
+  if (!x11Visual)
+    {
+      printf("Error: Unable to acquire visual\n");
+      exit(-1);
+    }
+  x11Colormap = XCreateColormap( x11Display, sRootWindow, x11Visual->visual, AllocNone );
+  sWA.colormap = x11Colormap;
+
+  i32Width  = WINDOW_WIDTH  < XDisplayWidth(x11Display, x11Screen) ? WINDOW_WIDTH : XDisplayWidth(x11Display, x11Screen);
+  i32Height = WINDOW_HEIGHT < XDisplayHeight(x11Display,x11Screen) ? WINDOW_HEIGHT: XDisplayHeight(x11Display,x11Screen);
+
+  // Creates the X11 window
+  x11Window = XCreateWindow( x11Display, RootWindow(x11Display, x11Screen), 0, 0, i32Width, i32Height, 0, CopyFromParent, InputOutput, CopyFromParent, ui32Mask, &sWA);
+  XMapWindow(x11Display, x11Window);
+  XFlush(x11Display);
+
+  GLint iErr;
+  //get the default display type for EGL
+  eglDisplay = eglGetDisplay((EGLNativeDisplayType)x11Display);
+  iErr = eglGetError();
+  fprintf(stderr,"getDisplay Failed: %i", iErr);
+
+  //Initialize the EGL display
+  eglInitialize(eglDisplay, NULL, NULL);
+  iErr = eglGetError();
+  fprintf(stderr,"Init failed: %i", iErr);
+
+  //Make OpenGL ES the current API
+  eglBindAPI(EGL_OPENGL_ES_API);
+  
+  int iConfigs;
+  eglChooseConfig(eglDisplay, aEGLAttributes, &eglConfig, 1, &iConfigs);
+  iErr = eglGetError();
+  fprintf(stderr, "chooseConfig: %i",iErr);
+	if (iConfigs == 0) {
         printf("No EGL configurations were returned.\n");
 		exit(-1);
     }
 
-	hWindow = create_window("OpenGL ES 2.0 Example on a Linux Desktop", uiWidth,
-				uiHeight, hDisplay, sEGLDisplay, aEGLConfigs[0], &colormap, &pVisual);
+	eglSurface = eglCreateWindowSurface(eglDisplay, eglConfig, (EGLNativeWindowType)x11Window, NULL);
 
-	sEGLSurface = EGL_CHECK(eglCreateWindowSurface(sEGLDisplay, aEGLConfigs[0], (EGLNativeWindowType)hWindow, NULL));
-
-	if (sEGLSurface == EGL_NO_SURFACE) {
+	if (eglSurface == EGL_NO_SURFACE) {
 	  printf("Failed to create EGL surface.\n");
 	  exit(-1);
 	}
 	
- 	sEGLContext = EGL_CHECK(eglCreateContext(sEGLDisplay, aEGLConfigs[0], EGL_NO_CONTEXT, aEGLContextAttributes));
+ 	eglContext = eglCreateContext(eglDisplay, eglConfig, NULL, ai32ContextAttribs);
 
-	if (sEGLContext == EGL_NO_CONTEXT) {
+	if (eglContext == EGL_NO_CONTEXT) {
 	  printf("Failed to create EGL context.\n");
 	  exit(-1);
 	}
 	
-	EGL_CHECK(eglMakeCurrent(sEGLDisplay, sEGLSurface, sEGLSurface, sEGLContext));
+	EGL_CHECK(eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext));
 	LUDecomp::_CheckForGLError("Window Created");
+
+
 	lu = new LUDecomp();
 	lu->Initialize(400, 400, 1,0,0);
 
-	fprintf(stderr, "extensions supported: %s",(char* )glGetString(GL_EXTENSIONS));
+	
 	
 }
 
