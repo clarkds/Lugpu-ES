@@ -56,7 +56,7 @@ ShaderProg::~ShaderProg()
 }
 void ShaderProg::Load(char* vprog, char* fprog)
 {
-  memcpy(source,fprog,strlen(fprog));
+    strncpy(source, fprog, 1024);
     prog_id = glCreateProgram();
 
 	GLuint fshader = glCreateShader(GL_FRAGMENT_SHADER);
