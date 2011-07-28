@@ -133,7 +133,7 @@ void ShaderProg::Release()
 
 }
 
-void ShaderProg::SetConstant(char* name, GLfloat x, GLfloat y, GLfloat z, GLfloat w)
+void ShaderProg::SetConstant(const char* name, GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 {
 	GLuint index = glGetUniformLocation( prog_id, name );
 	glUniform4f(index,x,y,z,w);

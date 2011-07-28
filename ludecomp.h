@@ -52,7 +52,7 @@ public:
 protected: // methods
 	void  _InitializeSlabOps();
 public:
-	static void _CheckForGLError( char * msg );
+	static void _CheckForGLError( const char * msg );
   
 protected: // types
 
