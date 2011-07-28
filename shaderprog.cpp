@@ -70,7 +70,7 @@ void ShaderProg::Load(char* vprog, char* fprog)
 	
 	GLint e;
 	glGetShaderiv(vshader, GL_COMPILE_STATUS, &e);
-	if (e) {
+	if (!e) {
 		fprintf(stderr, "Error compiling vertex shader:\n");
 		int len;
 		char log[1024];
@@ -79,7 +79,7 @@ void ShaderProg::Load(char* vprog, char* fprog)
 	}	 
 
 	glGetShaderiv(fshader, GL_COMPILE_STATUS, &e);
-	if (e) {
+	if (!e) {
 		printf("Error compiling fragment shader:\n%s", fprog);
 		int len;
 		char log[1024];
@@ -93,7 +93,7 @@ void ShaderProg::Load(char* vprog, char* fprog)
 	glLinkProgram( prog_id );
 	
 	glGetProgramiv(prog_id, GL_LINK_STATUS, &e);
-	if (e) {
+	if (!e) {
 		printf("Error linking program:\n");
 		int len;
 		char log[1024];
@@ -103,7 +103,7 @@ void ShaderProg::Load(char* vprog, char* fprog)
 
 	GLenum error = glGetError();
 	if( error != GL_NO_ERROR )
-		fprintf( stderr, "ERROR\n0x%x\n", error );
+		fprintf( stderr, "Program compile error: \n0x%x\n", error );
 }
 
 
