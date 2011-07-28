@@ -77,10 +77,10 @@ public:
   void BindProg();
   void Release();
 
-  void SetConstant(char *name, GLfloat x, GLfloat y, GLfloat z, GLfloat w);
+  void SetConstant(const char *name, GLfloat x, GLfloat y, GLfloat z, GLfloat w);
 
   GLuint prog_id;
-  char* source;
+  char source[1024];
 };
 
 #endif 

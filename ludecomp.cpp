@@ -10,8 +10,8 @@
 #include <cmath>
 
 #ifdef __APPLE__
-#include <OpenGL/gl3.h>
-#include <OpenGL/gl3ext.h>
+#include <OpenGL/gl.h>
+#include <OpenGL/glext.h>
 #include <GLUT/glut.h>
 
 #else
@@ -573,7 +573,7 @@ void LUDecomp::GetMatrix(float* m) //converted
 // Function     	: static CheckForGLError
 // Description	  : local check for GL error
 //----------------------------------------------------------------------------
-void LUDecomp::_CheckForGLError( char *msg )   //converted
+void LUDecomp::_CheckForGLError( const char *msg )   //converted
 {
 #if defined(DEBUG) | defined(_DEBUG)
 	GLenum errCode;

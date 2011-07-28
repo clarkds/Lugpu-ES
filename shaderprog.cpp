@@ -56,7 +56,7 @@ ShaderProg::~ShaderProg()
 }
 void ShaderProg::Load(char* vprog, char* fprog)
 {
-  memcpy(source,fprog,strlen(fprog));
+    strncpy(source, fprog, 1024);
     prog_id = glCreateProgram();
 
 	GLuint fshader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -75,7 +75,7 @@ void ShaderProg::Load(char* vprog, char* fprog)
 		int len;
 		char log[1024];
 		glGetShaderInfoLog(vshader, 1024, &len, log);
-		printf("%s\n", log);
+		fprintf(stderr, "%s\n", log);
 	}	 
 
 	glGetShaderiv(fshader, GL_COMPILE_STATUS, &e);
@@ -84,7 +84,7 @@ void ShaderProg::Load(char* vprog, char* fprog)
 		int len;
 		char log[1024];
 		glGetShaderInfoLog(fshader, 1024, &len, log);
-		printf("%s\n", log);
+		fprintf(stderr, "%s\n", log);
 	}	 
 
 	glAttachShader( prog_id, vshader );
@@ -98,7 +98,7 @@ void ShaderProg::Load(char* vprog, char* fprog)
 		int len;
 		char log[1024];
 		glGetProgramInfoLog(prog_id, 1024, &len, log);
-		printf("%s\n", log);
+		fprintf(stderr, "%s\n", log);
 	}	 
 
 	GLenum error = glGetError();
@@ -133,7 +133,7 @@ void ShaderProg::Release()
 
 }
 
-void ShaderProg::SetConstant(char* name, GLfloat x, GLfloat y, GLfloat z, GLfloat w)
+void ShaderProg::SetConstant(const char* name, GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 {
 	GLuint index = glGetUniformLocation( prog_id, name );
 	glUniform4f(index,x,y,z,w);
