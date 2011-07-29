@@ -43,7 +43,6 @@ void Context::initialize() {
     EGL_RED_SIZE, 8,
     EGL_GREEN_SIZE, 8,
     EGL_BLUE_SIZE, 8,
-    EGL_LUMINANCE_SIZE, 32,
     EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
     EGL_NONE
   };
@@ -121,6 +120,11 @@ void Context::initialize() {
 	}
 	
 	EGL_CHECK(eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext));
+	
+	fprintf(stderr, "OpenGL Context Initialized (%s %s %s)\n",
+		glGetString(GL_VENDOR), glGetString(GL_RENDERER), 
+		glGetString(GL_VERSION));
+	fprintf(stderr, "Extentions: %s\n", glGetString(GL_EXTENSIONS));
 }
 
 void Context::destroy() {
