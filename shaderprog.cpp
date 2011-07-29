@@ -11,16 +11,19 @@ ShaderProg::~ShaderProg()
 void ShaderProg::Load(char* vprog, char* fprog)
 {
     strncpy(source, fprog, 1024);
-    GL_CHECK();
-    prog_id = glCreateProgram();
-    GL_CHECK();
 
 	GLuint fshader = glCreateShader(GL_FRAGMENT_SHADER);
 	GLuint vshader = glCreateShader(GL_VERTEX_SHADER);
 	
 	GL_CHECK();
 	
-	fprintf(stderr, "Vertex source: \n%s\nFragment source: \n%s\n", vprog, fprog);
+	if (! (fshader || vshader)) {
+	    fprintf(stderr, "Unable to create shaders.\n");
+	    GLboolean b;
+        glGetBooleanv(GL_SHADER_COMPILER, &b);
+        fprintf(stderr, "Shader compiler support: %i\n", b);
+	    exit(1);
+	}
 
 	glShaderSource(fshader, 1 , (const char **) &fprog, 0);
 	glShaderSource(vshader, 1 , (const char **) &vprog, 0);
@@ -47,7 +50,11 @@ void ShaderProg::Load(char* vprog, char* fprog)
 		char log[1024];
 		glGetShaderInfoLog(fshader, 1024, &len, log);
 		fprintf(stderr, "%s\n", log);
-	}	 
+	}
+	
+	GL_CHECK();
+    prog_id = glCreateProgram();
+    GL_CHECK();
 
 	glAttachShader( prog_id, vshader );
 	glAttachShader( prog_id, fshader );

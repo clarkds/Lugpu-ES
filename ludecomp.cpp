@@ -81,6 +81,7 @@ LUDecomp::LUDecomp()
 : current01(1), _xRes(1), _yRes(1), _n(0), _m(0), _ncomponents(1), _currentDrawSurface(0),_bInitialized(false), _bComputed(false)
 {
     context = new Context();
+    context->initialize();
 }
 
 //----------------------------------------------------------------------------
@@ -93,6 +94,7 @@ LUDecomp::LUDecomp()
  */ 
 LUDecomp::~LUDecomp()
 {
+    context->destroy();
 }
 
 /**************BEGINNING CONVERSION TO OPENGLES********************/
@@ -304,6 +306,7 @@ void LUDecomp::Divide(int k,float xmin,float ymin,float xmax,float ymax) //conve
 { 	
   GLfloat t[8];
   for(int i = 0; i<8; i++) {
+
     t[i] = k+.5;
   }
   
@@ -586,5 +589,6 @@ void LUDecomp::_CheckForGLError( const char *msg )   //converted
 	if ((errCode = glGetError()) != GL_NO_ERROR) 
 	{
 		fprintf(stderr,"OpenGL ERROR: 0x%x: %s\n", errCode, msg);
+		exit(1);
 	}
 }

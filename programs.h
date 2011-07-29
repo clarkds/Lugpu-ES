@@ -1,13 +1,13 @@
 char vertex_shader[] =
-"attribute vec2 position;\n"
-"attribute vec2 v_texcoord0;\n"
-"attribute vec2 v_texcoord1;\n"
+"attribute highp vec2 position;\n"
+"attribute highp vec2 v_texcoord0;\n"
+"attribute highp vec2 v_texcoord1;\n"
 
 "uniform sampler2D texture0;\n"
 "uniform sampler2D texture1;\n"
 
-"varying vec2 texcoord0;\n"
-"varying vec2 texcoord1;\n"
+"varying highp vec2 texcoord0;\n"
+"varying highp vec2 texcoord1;\n"
 
 "void main(void) {\n"
 "  texcoord0 = v_texcoord0;\n"
@@ -30,13 +30,13 @@ char divide_op_old[] = "!!ARBfp1.0\n"
 
 char divide_op[] = 
 
-"varying vec2 texcoord0;\n"
+"varying highp vec2 texcoord0;\n"
 "uniform sampler2D texture0;\n"
 
 "void main(void) {\n"
 "  \n"
-"  vec4 t1 = texture2D(texture0, texcoord0);\n"
-"  vec4 t2 = texture2D(texture0, vec2(gl_FragCoord.x, gl_FragCoord.y));\n"
+"  highp vec4 t1 = texture2D(texture0, texcoord0);\n"
+"  highp vec4 t2 = texture2D(texture0, vec2(gl_FragCoord.x, gl_FragCoord.y));\n"
 
 "  gl_FragColor = vec4(t2.x / t1.x, 0, 0, 0);\n"
 "}\n";
@@ -53,7 +53,7 @@ char copy_op_old[] = "!!ARBfp1.0\n"
 
 char copy_op[] = 
 
-"varying vec2 texcoord0;\n"
+"varying highp vec2 texcoord0;\n"
 "uniform sampler2D texture0;\n"
 
 "void main(void) {\n"
@@ -75,13 +75,13 @@ char swaprow_op_old[] = "!!ARBfp1.0\n"
 
 char swaprow_op[] = 
 
-"varying vec2 texcoord0;\n"
+"varying highp vec2 texcoord0;\n"
 "uniform sampler2D texture0;\n"
 
-"uniform float y;\n"
+"uniform highp float y;\n"
 
 "void main(void) {\n"
-"  vec2 coord = texcoord0;\n"
+"  highp vec2 coord = texcoord0;\n"
 "  coord.y = y;\n"
 "  gl_FragColor = texture2D(texture0, texcoord0);\n"
 "}\n";
@@ -101,13 +101,13 @@ char swapcol_op_old[]="!!ARBfp1.0\n"
 
 char swapcol_op[] = 
 
-"varying vec2 texcoord0;\n"
+"varying highp vec2 texcoord0;\n"
 "uniform sampler2D texture0;\n"
 
-"uniform float y;\n"
+"uniform highp float y;\n"
 
 "void main(void) {\n"
-"  vec2 coord = texcoord0;\n"
+"  highp vec2 coord = texcoord0;\n"
 "  coord.y = y;\n"
 "  gl_FragColor = texture2D(texture0, texcoord0);\n"
 "}\n";
@@ -129,15 +129,15 @@ char quadtree_op_old[]="!!ARBfp1.0\n"
 
 char quadtree_op[] = 
 
-"varying vec2 texcord0;\n"
+"varying highp vec2 texcord0;\n"
 "uniform sampler2D texture0;\n"
 "uniform sampler2D texture1;\n"
 
-"uniform vec4 c;\n"
+"uniform highp vec4 c;\n"
 
 "void main(void) {\n"
-"  vec4 r0 = texture2D(texture1, vec2(gl_FragCoord.x, gl_FragCoord.y));\n"
-"  vec4 r1 = texture2D(texture0, vec2(c.x, c.y));\n"
+"  highp vec4 r0 = texture2D(texture1, vec2(gl_FragCoord.x, gl_FragCoord.y));\n"
+"  highp vec4 r1 = texture2D(texture0, vec2(c.x, c.y));\n"
 "  gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n"
 "  // FIXME \n"
 "}\n";
@@ -160,15 +160,15 @@ char row_op_old[] = "!!ARBfp1.0\n"
 
 char row_op[] = 
 
-"varying vec2 texcoord0;\n"
-"varying vec2 texcoord1;\n"
+"varying highp vec2 texcoord0;\n"
+"varying highp vec2 texcoord1;\n"
 "uniform sampler2D texture0;\n"
 "uniform sampler2D texture1;\n"
 
 "void main(void) {\n"
-"  vec4 r0 = texture2D(texture0, texcoord0);\n"
-"  vec4 r2 = texture2D(texture0, vec2(gl_FragCoord.x, gl_FragCoord.y));\n"
-"  vec4 r1 = texture2D(texture0, texcoord1);\n"
+"  highp vec4 r0 = texture2D(texture0, texcoord0);\n"
+"  highp vec4 r2 = texture2D(texture0, vec2(gl_FragCoord.x, gl_FragCoord.y));\n"
+"  highp vec4 r1 = texture2D(texture0, texcoord1);\n"
 "  gl_FragColor = vec4(r1.x + r2.x - r0.x, 0.0, 0.0, 0.0);\n"
 "}\n";
 
@@ -190,12 +190,12 @@ char max_op_old[] = "!!ARBfp1.0\n"
 
 char max_op[] = 
 
-"varying vec2 texcoord0;\n"
+"varying highp vec2 texcoord0;\n"
 "uniform sampler2D texture0;\n"
 
 "void main(void) {\n"
-"  vec4 r1 = texture2D(texture0, texcoord0);\n"
-"  vec4 r0 = texture2D(texture0, vec2(gl_FragCoord.x, gl_FragCoord.y));\n"
+"  highp vec4 r1 = texture2D(texture0, texcoord0);\n"
+"  highp vec4 r0 = texture2D(texture0, vec2(gl_FragCoord.x, gl_FragCoord.y));\n"
 "  gl_FragColor = max(r0, r1);\n"
 "}\n";
 

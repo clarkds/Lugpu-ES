@@ -30,7 +30,7 @@ Context::~Context() {
 void Context::initialize() {
   //X11 Varialbes
   long		        x11Screen	= 0;
-  Visual*           x11Visual	= 0;
+  Visual*         x11Visual	= 0;
 
   //EGL Variables
   EGLConfig			eglConfig	= 0;
@@ -88,24 +88,19 @@ void Context::initialize() {
   XMapWindow(x11Display, x11Window);
   XFlush(x11Display);
 
-  GLint iErr;
   //get the default display type for EGL
-  eglDisplay = eglGetDisplay((EGLNativeDisplayType)x11Display);
-  iErr = eglGetError();
-  fprintf(stderr,"getDisplay Failed: %i", iErr);
+  EGL_CHECK(eglDisplay = eglGetDisplay((EGLNativeDisplayType)x11Display));
 
   //Initialize the EGL display
-  eglInitialize(eglDisplay, NULL, NULL);
-  iErr = eglGetError();
-  fprintf(stderr,"Init failed: %i", iErr);
+  EGL_CHECK(eglInitialize(eglDisplay, NULL, NULL));
 
   //Make OpenGL ES the current API
   eglBindAPI(EGL_OPENGL_ES_API);
   
   int iConfigs;
-  eglChooseConfig(eglDisplay, aEGLAttributes, &eglConfig, 1, &iConfigs);
-  iErr = eglGetError();
-  fprintf(stderr, "chooseConfig: %i",iErr);
+  EGL_CHECK(
+    eglChooseConfig(eglDisplay, aEGLAttributes, &eglConfig, 1, &iConfigs));
+  
 	if (iConfigs == 0) {
         printf("No EGL configurations were returned.\n");
 		exit(-1);
