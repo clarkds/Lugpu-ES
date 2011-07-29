@@ -47,9 +47,6 @@ void Context::initialize() {
     EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
     EGL_NONE
   };
-  
-  EGLConfig   aEGLConfigs[1];
-  EGLint      cEGLConfigs;
 	
   EGLint ai32ContextAttribs[] = { EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE };
 	

@@ -66,10 +66,19 @@ enum { LUGPU_NOPIVOT =0 , LUGPU_PARTIALPIVOT=1, LUGPU_FULLPIVOT=2};
     { \
         EGLint eglError = eglGetError(); \
         if(eglError != EGL_SUCCESS) { \
-            fprintf(stderr, "eglGetError() = %i (0x%.8x) at line %i\n", eglError, eglError, __LINE__); \
+            fprintf(stderr, "eglError 0x%x at line %i of %s\n", eglError, __LINE__, __FILE__); \
             exit(1); \
         } \
     }
 
+#define GL_CHECK(x) \
+    x; \
+    { \
+        GLenum glError = glGetError(); \
+        if (glError != GL_NO_ERROR) { \
+            fprintf(stderr, "glError 0x%x at line %i of %s\n", glError, __LINE__, __FILE__); \
+            exit(1); \
+        } \
+    }
 
 #endif

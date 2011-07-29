@@ -10,10 +10,10 @@ INCLUDES = -I$(SDKPATH)/Builds/OGLES2/Include
 CFLAGS   = -Wall -m32
 DEBUG    = -g -DDEBUG
 
-example2:
+example2: $(SOURCES)
 	g++ $(CFLAGS) -o example2 $(INCLUDES) $(LIBPATHS) $(LIBS) $(SOURCES)
 
-debug:
+debug: $(SOURCES)
 	g++ $(CFLAGS) $(DEBUG) -o example2 $(INCLUDES) $(LIBPATHS) $(LIBS) $(SOURCES)
 
 clean:

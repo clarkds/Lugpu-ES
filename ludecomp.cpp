@@ -39,17 +39,12 @@ LUDecomp * lu;
 
 void lugpu_initilize(int argc, char ** argv)   // not changing this, assuming glutES is identical
 {
-
-
 	lu = new LUDecomp();
 	lu->Initialize(400, 400, 1,0,0);
 }
 
-
-
 void lugpu_sgetrf(const int *m,const int *n,float *matrix,const int *lda,int *pivot,int *info) //leaving alone for now, not sure what does
 {
-
 	*info = 0;
 	if(*m < 0)
 		*info = -1;
@@ -83,8 +78,7 @@ void lugpu_sgetrf(const int *m,const int *n,float *matrix,const int *lda,int *pi
  * @brief Default Constructor
  */ 
 LUDecomp::LUDecomp() 
-: _xRes(1), _yRes(1), _n(0), _m(0), _ncomponents(1), _currentDrawSurface(0),
-  _bInitialized(false), _bComputed(false), current01(1)
+: current01(1), _xRes(1), _yRes(1), _n(0), _m(0), _ncomponents(1), _currentDrawSurface(0),_bInitialized(false), _bComputed(false)
 {
     context = new Context();
 }
@@ -397,20 +391,20 @@ void LUDecomp::Compute()  //converting   *multitexcoord
 	assert( _bInitialized );
 
 	float deltaY = 1.0f;
-	float halfDeltaY = .5f;
+	//float halfDeltaY = .5f;
 	float rYmin  = 0.0f; 
 	float rYmax  = deltaY;
 
 	float deltaX = 1.0f;
-	float halfDeltaX = .5f;
+	//float halfDeltaX = .5f;
 	float rXmin  = 0.0f;
 	float rXmax  = deltaX;
 
 
-	float index; 
-	float indexi, indexj;
+	//float index; 
+	//float indexi, indexj;
 
-	int maxrow,maxcol;
+	//int maxrow,maxcol;
 
 	//glBindFramebuffer(GL_FRAMEBUFFER, fb);
 
@@ -589,10 +583,8 @@ void LUDecomp::GetMatrix(float* m) //converted
 void LUDecomp::_CheckForGLError( const char *msg )   //converted
 {
 	GLenum errCode;
-	const GLubyte *errStr;
 	if ((errCode = glGetError()) != GL_NO_ERROR) 
 	{
-		//errStr = gluErrorString(errCode);
 		fprintf(stderr,"OpenGL ERROR: 0x%x: %s\n", errCode, msg);
 	}
 }

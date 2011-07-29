@@ -1,6 +1,8 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "shaderprog.h"
+#include "common.h"
 
 ShaderProg::~ShaderProg()
 {
@@ -9,14 +11,21 @@ ShaderProg::~ShaderProg()
 void ShaderProg::Load(char* vprog, char* fprog)
 {
     strncpy(source, fprog, 1024);
-    
+    GL_CHECK();
     prog_id = glCreateProgram();
+    GL_CHECK();
 
 	GLuint fshader = glCreateShader(GL_FRAGMENT_SHADER);
 	GLuint vshader = glCreateShader(GL_VERTEX_SHADER);
+	
+	GL_CHECK();
+	
+	fprintf(stderr, "Vertex source: \n%s\nFragment source: \n%s\n", vprog, fprog);
 
 	glShaderSource(fshader, 1 , (const char **) &fprog, 0);
 	glShaderSource(vshader, 1 , (const char **) &vprog, 0);
+	
+	GL_CHECK();
 	
 	glCompileShader(fshader);
 	glCompileShader(vshader);
@@ -54,9 +63,7 @@ void ShaderProg::Load(char* vprog, char* fprog)
 		fprintf(stderr, "%s\n", log);
 	}	 
 
-	GLenum error = glGetError();
-	if( error != GL_NO_ERROR )
-		fprintf( stderr, "Program compile error: \n0x%x\n", error );
+	GL_CHECK();
 }
 
 
@@ -67,13 +74,8 @@ void ShaderProg::Bind()
 	  fprintf( stderr, "ERROR - Pre-Bind()\n0x%x progid: %d\n", error, prog_id );
 	}
 
-	glUseProgram( prog_id );
-
-	if( error != GL_NO_ERROR ){
-	  fprintf( stderr, "ERROR - Bind()\n0x%x progid: %d\n", error, prog_id );
-	}
-		
-	}
+	GL_CHECK(glUseProgram( prog_id ));
+}
 
 void ShaderProg::BindProg(){
 	glUseProgram( prog_id );
@@ -82,11 +84,7 @@ void ShaderProg::BindProg(){
 
 void ShaderProg::Release()
 {
-	glDeleteProgram( prog_id );
-	GLenum error = glGetError();
-	if( error != GL_NO_ERROR )
-		fprintf( stderr, "ERROR - Release()\n0x%x\n", error );
-
+	GL_CHECK(glDeleteProgram(prog_id));
 }
 
 void ShaderProg::SetConstant(const char* name, GLfloat x, GLfloat y, GLfloat z, GLfloat w)

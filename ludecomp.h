@@ -72,12 +72,11 @@ public:
 	unsigned int fb[2];
 	unsigned int textureid[4];
 
-  
 	int    _ncomponents;
 	int    _currentDrawSurface; // 0 is front, 1 is back
 
-	bool            _bInitialized;
-	bool            _bComputed;
+	bool   _bInitialized;
+	bool   _bComputed;
   
 	ShaderProg max_fp;
 	ShaderProg divide_fp;
