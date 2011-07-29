@@ -1,18 +1,23 @@
-SOURCES  = window.c shaderprog.cpp ludecomp.cpp example2.cpp stopwatch.cpp
+SOURCES  = context.cpp shaderprog.cpp ludecomp.cpp example2.cpp stopwatch.cpp
 
-LIBPATHS = -L/usr/lib32 -L/usr/X11R6/lib -L/usr/local/lib
+SDKPATH  = /home/merritt/Desktop/SDKPackage_OGLES2
+
+LIBPATHS = -L$(SDKPATH)/Builds/OGLES2/LinuxX86/Lib
 LIBS     = -lX11 -lGLESv2 -lEGL
+
+INCLUDES = -I$(SDKPATH)/Builds/OGLES2/Include
+
+CFLAGS   = -Wall -m32
 DEBUG    = -g -DDEBUG
-INCLUDES = -I/usr/local/include
 
 example2:
-	g++ -o example2 $(LIBPATHS) $(LIBS) $(SOURCES) -m32
+	g++ $(CFLAGS) -o example2 $(INCLUDES) $(LIBPATHS) $(LIBS) $(SOURCES)
 
 debug:
-	g++ -o example2 -I$(INCLUDES) $(LIBPATHS) $(LIBS) $(SOURCES) $(DEBUG) -m32
+	g++ $(CFLAGS) $(DEBUG) -o example2 $(INCLUDES) $(LIBPATHS) $(LIBS) $(SOURCES)
 
 clean:
 	rm -rf example2
 
-all:
+all: debug
 

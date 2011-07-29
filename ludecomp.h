@@ -8,6 +8,7 @@ void lugpu_initilize(int argc, char ** argv);
 #include <vector>
 
 #include "shaderprog.h"
+#include "context.h"
 
 // forward decl
 class RenderTexture;
@@ -86,10 +87,9 @@ public:
 	ShaderProg quadtree_fp;
 	ShaderProg row_fp;
 
-	
-
-
 private:
+    Context *context;
+
 };
 
 #endif //__LUDECOMP_H__
