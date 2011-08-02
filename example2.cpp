@@ -93,7 +93,7 @@ int main (int argc, char *argv[])
 
 	lugpu_initilize(argc, argv);
 
-	m = 512;
+	m = 8;
 	{
 		n = m;
 

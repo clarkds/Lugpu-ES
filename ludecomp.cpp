@@ -35,6 +35,16 @@
 
 using namespace std;
 
+void printMatrix(float *mat, unsigned int M, unsigned int N) {
+	for (unsigned int i = 0; i < N; i++) {
+		printf("[ ");
+		for (unsigned int j = 0; j < M; j++) {
+			printf("%.6f ", (*mat++));
+		}
+		printf("]\n");
+	}
+}
+
 LUDecomp * lu;
 
 void lugpu_initilize(int argc, char ** argv)   // not changing this, assuming glutES is identical
@@ -59,13 +69,22 @@ void lugpu_sgetrf(const int *m,const int *n,float *matrix,const int *lda,int *pi
 		//call XERBLA
 		return;
 	}
-
+	
+	printf("Loaded matrix:\n");
+	printMatrix(matrix, *m, *n);
+	
 	lu->SetSize(*m,*n);
 	lu->LoadMatrix(matrix);
+	
+	memset(matrix, 0, (*n) * (*m) * sizeof(float));
+	
+	//lu->SwapBuffers();
 
-	lu->Compute();
+	//lu->Compute();
 	
 	lu->GetMatrix(matrix);
+	printf("Got matrix:\n");
+	printMatrix(matrix, *m, *n);
 }
 
 
@@ -78,7 +97,7 @@ void lugpu_sgetrf(const int *m,const int *n,float *matrix,const int *lda,int *pi
  * @brief Default Constructor
  */ 
 LUDecomp::LUDecomp() 
-: current01(1), _xRes(1), _yRes(1), _n(0), _m(0), _ncomponents(1), _currentDrawSurface(0),_bInitialized(false), _bComputed(false)
+: currentBuffer(1), _xRes(1), _yRes(1), _n(0), _m(0), _ncomponents(1), _currentDrawSurface(0),_bInitialized(false), _bComputed(false)
 {
     context = new Context();
     context->initialize();
@@ -106,14 +125,26 @@ void LUDecomp::SetSize(int m,int n)  //converted
 	_n = n;
 
 	glActiveTexture( GL_TEXTURE0 );  
-	glBindTexture(GL_TEXTURE_2D, textureid[0]);   //changed GL_TEXTURE_RECTANGE to 2D
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, _m, _n, 0, GL_LUMINANCE, GL_FLOAT, NULL);
+	glBindTexture(GL_TEXTURE_2D, textureid[0]);
+	
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
+	
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _m, _n, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
 	_CheckForGLError("Create Texture0");
 
 	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture(GL_TEXTURE_2D, textureid[1]);  
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, _m, _n, 0, GL_LUMINANCE, GL_FLOAT, NULL);
+	glBindTexture(GL_TEXTURE_2D, textureid[1]);
+	
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _m, _n, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
 	_CheckForGLError("Create Texture1");
 	
@@ -125,6 +156,9 @@ void LUDecomp::SetSize(int m,int n)  //converted
 
 	_CheckForGLError("Bind Texture0");
 	
+	glClearColor(0.0, 0.0, 0.0, 0.0);
+	GL_CHECK(glClear(GL_COLOR_BUFFER_BIT));
+	
 	glBindFramebuffer(GL_FRAMEBUFFER, fb[1]);
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER,
@@ -132,6 +166,8 @@ void LUDecomp::SetSize(int m,int n)  //converted
                                   GL_TEXTURE_2D, textureid[1], 0);
 
 	_CheckForGLError("Bind Texture1");
+	
+	GL_CHECK(glClear(GL_COLOR_BUFFER_BIT));
 
 	glBindFramebuffer(GL_FRAMEBUFFER, fb[0]);
 
@@ -284,11 +320,11 @@ void LUDecomp::Draw(ShaderProg* program, GLfloat* vertices, GLfloat* texcoord0, 
 	v[4] = xmax;  v[5] = ymax;
 	v[6] = xmax;  v[7] = ymin;
 
-	if (t)
+	if (t) {
 		Draw(program, v, t, t, 8);
-	else
+	} else {
 		Draw(program, v, v, v, 8);
-
+	}
 	
 }
 
@@ -338,46 +374,6 @@ void LUDecomp::SwapCols(float a,float b) //converted
 	Draw(&swapcol_fp,v,v,v,4);
 }
 
-
-//----------------------------------------------------------------------------
-// Function     	: LUDecomp::PingPong01
-// Description	    : 
-//----------------------------------------------------------------------------
-/**
- * @fn LUDecomp::PingPong01()
- * @brief switches between two different drawing / reading buffers
- * 
- * 
- */ 
-void LUDecomp::PingPong01()
-{
-	current01 = !current01;
-	Refresh01();
-	
-}
-
-//----------------------------------------------------------------------------
-// Function     	: LUDecomp::Refresh01
-// Description	    : 
-//----------------------------------------------------------------------------
-/**
- * @fn LUDecomp::Refresh01()
- * @brief Refreshes to the current drawing buffer (in case something else had changed the drawing buffer)
- * 
- * 
- */ 
-void LUDecomp::Refresh01()  //converted
-{
-
-  glBindFramebuffer(GL_FRAMEBUFFER, current01);
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, textureid[!current01]);
-   
-
-}
-
-
-
 //----------------------------------------------------------------------------
 // Function     	: LUDecomp
 // Description	    : 
@@ -409,35 +405,40 @@ void LUDecomp::Compute()  //converting   *multitexcoord
 
 	//int maxrow,maxcol;
 
-	//glBindFramebuffer(GL_FRAMEBUFFER, fb);
+	glBindFramebuffer(GL_FRAMEBUFFER, fb[0]);
+	
+	GL_CHECK();
 
-	PingPong01();
+	SwapBuffers();
+	
+	GL_CHECK();
+	
 	glClear(GL_COLOR_BUFFER_BIT);
-	PingPong01();
+	
+	GL_CHECK();
+	
+	SwapBuffers();
 
 	_CheckForGLError("Compute Init");
 
 	for (int k = 0; k < max(_n-1,_m-1); ++k)
 	{
 		
-
-		PingPong01();
+		SwapBuffers();
 
 		//copy column / row
 
-
 		CopyRect(&copy_fp,k,k,k+1,_n, NULL);
 		CopyRect(&copy_fp,k,k,_m,k+1, NULL);
-		
 	
-		PingPong01();
+		SwapBuffers();
 
 		Divide(k,rXmin, rYmin + deltaY, rXmax, _m);	
 
 		// Perform sweep of all the remaining rows
 		// ie. row'(i) = row(i) - row(i)[k]*row(k)[j]
 
-		PingPong01();
+		SwapBuffers();
 
 		CopyRect(&copy_fp,k+.5,k+.5,_m,k+1.5, NULL);
 
@@ -479,7 +480,24 @@ void LUDecomp::Compute()  //converting   *multitexcoord
 	_bComputed = true;
 }
 
-
+//----------------------------------------------------------------------------
+// Function     	: LUDecomp::SwapBuffers
+// Description	    : 
+//----------------------------------------------------------------------------
+/**
+ * @fn LUDecomp::SwapBuffers()
+ * @brief switches between two different drawing / reading buffers
+ * 
+ * 
+ */ 
+void LUDecomp::SwapBuffers()
+{
+	currentBuffer = !currentBuffer;
+	GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, fb[currentBuffer]));
+	glActiveTexture(GL_TEXTURE0);
+	GL_CHECK(glBindTexture(GL_TEXTURE_2D, textureid[!currentBuffer]));
+	
+}
 
 //----------------------------------------------------------------------------
 // Function     	: LUDecomp::LoadMatrix
@@ -495,68 +513,26 @@ void LUDecomp::LoadMatrix(float *data)  //converted
 	GLint format = (_ncomponents == 1) ? GL_LUMINANCE : GL_RGBA;
 	_currentDrawSurface = 0;
 
-	current01 = 1;
-
+	currentBuffer = 1;
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D,textureid[0]);   
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, _m, _n, format, GL_FLOAT,data);	
+	glBindTexture(GL_TEXTURE_2D, textureid[0]);   
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, _m, _n, GL_RGBA, GL_UNSIGNED_BYTE, data);	
 	
 	//Go into FBO mode, bind the uploaded data as the source texture
 	glBindFramebuffer(GL_FRAMEBUFFER, fb[0]);
-	//glDrawBuffer( GL_COLOR_ATTACHMENT0_EXT);  assumed not needed
+	
 	glColorMask(~0,~0,~0,~0);
-	//glEnable(GL_TEXTURE_RECTANGLE_NV);   assumed not needed	
+	
 	glActiveTexture( GL_TEXTURE0 );
 
 
-	PingPong01();
-	
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+	SwapBuffers();
 
 	++_currentDrawSurface;
 	_CheckForGLError("LoadMatrix Complete");
 
 }
-
-//----------------------------------------------------------------------------
-// Function     	: LUDecomp::GetMatrix
-// Description	  : 
-//----------------------------------------------------------------------------
-/**
- * @fn LUDecomp::GetMatrix(std::vector<std::vector<float> >& m) const;
- * @brief Gets the matrix data;
- */ 
-void LUDecomp::GetMatrix(std::vector<std::vector<float> >& m) const  //converted
-{ 
-  GLint format = (_ncomponents == 1) ? GL_LUMINANCE : GL_RGBA;
-  //assert(_bComputed);
-
-  for (int i = (int)m.size() - 1; i >= 0; --i)
-    m[i].clear();
-  m.clear();
-
-  std::vector<float> data(_m * _ncomponents);
-
-  int xoffset = 0;
-  int yoffset = 0;
-
-  glBindFramebuffer(GL_FRAMEBUFFER,(_currentDrawSurface%2) ? fb[0] : fb[1]);
-
-	for (int i = 0; i < _n; ++i)
-	{
-		glReadPixels(xoffset, yoffset, _m, 1, format, GL_FLOAT, &data[0]);
-
-
-		m.push_back(data);
-		++yoffset;
-	}
-	glBindFramebuffer(GL_FRAMEBUFFER,0);
-	
-
-}
-
 
 //----------------------------------------------------------------------------
 // Function     	: LUDecomp::GetMatrix
@@ -574,7 +550,7 @@ void LUDecomp::GetMatrix(float* m) //converted
 
 	glBindFramebuffer(GL_FRAMEBUFFER,(_currentDrawSurface%2) ? fb[0] : fb[1]);
 	
-	glReadPixels(0,0,_m,_n,format, GL_FLOAT,(GLvoid*)m);
+	glReadPixels(0, 0, _m, _n, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)m);
 	glBindFramebuffer(GL_FRAMEBUFFER,0);
 }
 

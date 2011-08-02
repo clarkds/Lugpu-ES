@@ -1,13 +1,11 @@
 SOURCES  = context.cpp shaderprog.cpp ludecomp.cpp example2.cpp stopwatch.cpp
 
-SDKPATH  = /home/merritt/Desktop/SDKPackage_OGLES2
-
-LIBPATHS = -L$(SDKPATH)/Builds/OGLES2/LinuxX86/Lib
+LIBPATHS = 
 LIBS     = -lX11 -lGLESv2 -lEGL
 
-INCLUDES = -I$(SDKPATH)/Builds/OGLES2/Include
+INCLUDES = 
 
-CFLAGS   = -Wall -m32
+CFLAGS   = -Wall 
 DEBUG    = -g -DDEBUG
 
 debug: $(SOURCES)

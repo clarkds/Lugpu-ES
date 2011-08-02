@@ -86,7 +86,7 @@ void Context::initialize() {
   
   XMapWindow(x11Display, x11Window);
   XFlush(x11Display);
-
+  
   //get the default display type for EGL
   EGL_CHECK(eglDisplay = eglGetDisplay((EGLNativeDisplayType)x11Display));
 

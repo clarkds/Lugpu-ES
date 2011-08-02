@@ -44,9 +44,8 @@ public:
 	void SetSize(int m,int n);
 
 
-	void PingPong01();
-	int current01;
-	void Refresh01();
+	int currentBuffer;
+	void SwapBuffers();
 
 	int boundtexture;
 
